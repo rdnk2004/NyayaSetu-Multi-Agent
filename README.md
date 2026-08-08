@@ -1,6 +1,3 @@
-Here's the full README, reflecting the actual current state of the repo (not the day-based framing from our tracker — kept it progress-based like you asked):
-
-```markdown
 # NyayaSetu — Multi-Agent AI for Indian Law
 
 A multi-agent AI system that helps citizens understand their legal
@@ -160,4 +157,3 @@ defense), and evaluation against a labeled test set.
 A frontend (React/Next, served via a FastAPI backend) is being built
 in parallel, decoupled from the agent pipeline via a fixed API
 contract once agent output shapes stabilize.
-```
