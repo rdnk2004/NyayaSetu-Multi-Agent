@@ -109,7 +109,8 @@ def answer_question(case_brief: dict) -> dict:
         dict: {
             "answer": str,
             "cited_sections": list[str],
-            "status": "answered" | "unclear"
+            "status": "answered" | "unclear",
+            "retrieved_chunks": list[dict]
         }
     """
     if not isinstance(case_brief, dict):
@@ -117,6 +118,7 @@ def answer_question(case_brief: dict) -> dict:
             "answer": "",
             "cited_sections": [],
             "status": "unclear",
+            "retrieved_chunks": [],
         }
 
     domain = case_brief.get("domain", "Unknown")
@@ -130,6 +132,7 @@ def answer_question(case_brief: dict) -> dict:
             "answer": "",
             "cited_sections": [],
             "status": "unclear",
+            "retrieved_chunks": [],
         }
 
     chunks = retrieve(query, top_k=5)
@@ -138,6 +141,7 @@ def answer_question(case_brief: dict) -> dict:
             "answer": "",
             "cited_sections": [],
             "status": "unclear",
+            "retrieved_chunks": [],
         }
 
     prompt = QA_PROMPT_TEMPLATE.format(
@@ -156,6 +160,7 @@ def answer_question(case_brief: dict) -> dict:
             "answer": "",
             "cited_sections": [],
             "status": "unclear",
+            "retrieved_chunks": chunks,
         }
 
     if not isinstance(parsed, dict):
@@ -163,6 +168,7 @@ def answer_question(case_brief: dict) -> dict:
             "answer": "",
             "cited_sections": [],
             "status": "unclear",
+            "retrieved_chunks": chunks,
         }
 
     status = parsed.get("status", "unclear")
@@ -187,4 +193,5 @@ def answer_question(case_brief: dict) -> dict:
         "answer": answer,
         "cited_sections": cited_sections,
         "status": status,
+        "retrieved_chunks": chunks,
     }
