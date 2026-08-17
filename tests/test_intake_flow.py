@@ -8,7 +8,15 @@ Run: python3 src/test_intake_flow.py
 """
 
 import json
+import sys
+from pathlib import Path
 from unittest.mock import patch
+
+# Ensure src is in sys.path
+src_dir = Path(__file__).resolve().parent.parent / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
 from intake_agent import IntakeSession
 from domain_checklists import DOMAIN_CHECKLISTS
 
