@@ -10,12 +10,12 @@ Validates the output of the QA Agent against the retrieved statutory chunks:
 """
 
 import json
+import logging
 from typing import Any
 
-try:
-    from llm_client import call_llm_structured
-except ImportError:
-    from src.llm_client import call_llm_structured
+from llm_client import call_llm_structured
+
+logger = logging.getLogger(__name__)
 
 UNVERIFIED_FALLBACK_ANSWER = (
     "The legal citations in the generated answer could not be verified against the official "
@@ -46,7 +46,12 @@ Respond ONLY with a JSON object in this exact format:
 
 
 def _check_section_support(section: str, section_text: str, answer: str) -> tuple[bool, str]:
-    """Call LLM to check if the chunk text genuinely supports the answer's claims."""
+    """Call LLM to check if the chunk text genuinely supports the answer's claims.
+
+    Returns:
+        tuple[bool, str]: (is_supported, reason) where `reason` is the LLM's brief justification.
+                          When `is_supported` is False, the reason is also logged for auditability.
+    """
     prompt = CITATION_VERIFICATION_PROMPT_TEMPLATE.format(
         section=section,
         section_text=section_text,
@@ -56,9 +61,23 @@ def _check_section_support(section: str, section_text: str, answer: str) -> tupl
     try:
         parsed = json.loads(raw_response)
         is_supported = bool(parsed.get("is_supported", False))
-        reason = parsed.get("reason", "")
+        reason = str(parsed.get("reason", "")).strip()
+
+        # Log unsupported sections with the LLM's explanation for diagnosability/auditability.
+        if not is_supported:
+            logger.warning(
+                "Citation verification: section '%s' not supported by text. Reason: %s",
+                section,
+                reason or "<no reason provided by model>",
+            )
+
         return is_supported, reason
     except (json.JSONDecodeError, Exception) as e:
+        logger.warning(
+            "Citation verification: failed to parse LLM response for section '%s'. Error: %s",
+            section,
+            e,
+        )
         # Safe fallback: fail safe if LLM output cannot be cleanly parsed
         return False, f"Failed to parse LLM verification response: {e}"
 
@@ -76,6 +95,7 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
             "verified": bool,
             "verified_sections": list[str],
             "rejected_sections": list[str],
+            "details": dict[str, dict[str, Any]],
             "final_answer": str
         }
     """
@@ -87,11 +107,13 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
             "verified": True,
             "verified_sections": [],
             "rejected_sections": [],
+            "details": {},
             "final_answer": answer,
         }
 
     verified_sections: list[str] = []
     rejected_sections: list[str] = []
+    details: dict[str, dict[str, Any]] = {}
 
     for section in cited_sections:
         sec_str = str(section).strip()
@@ -105,7 +127,15 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
 
         if not matching_chunks:
             # Section wasn't actually retrieved
+            logger.warning(
+                "Citation verification: cited section '%s' not found in retrieved chunks.",
+                sec_str,
+            )
             rejected_sections.append(sec_str)
+            details[sec_str] = {
+                "supported": False,
+                "reason": "Section not found in retrieved chunks.",
+            }
             continue
 
         # Combine text of all matching chunks for this section
@@ -114,11 +144,24 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
         )
 
         if not combined_text.strip():
+            logger.warning(
+                "Citation verification: cited section '%s' has empty chunk text.",
+                sec_str,
+            )
             rejected_sections.append(sec_str)
+            details[sec_str] = {
+                "supported": False,
+                "reason": "Retrieved chunk text is empty for section.",
+            }
             continue
 
         # 2. LLM semantic support check
-        is_supported, _ = _check_section_support(sec_str, combined_text, answer)
+        is_supported, reason = _check_section_support(sec_str, combined_text, answer)
+
+        details[sec_str] = {
+            "supported": is_supported,
+            "reason": reason,
+        }
 
         if is_supported:
             verified_sections.append(sec_str)
@@ -131,5 +174,7 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
         "verified": all_verified,
         "verified_sections": verified_sections,
         "rejected_sections": rejected_sections,
+        "details": details,
         "final_answer": answer if all_verified else UNVERIFIED_FALLBACK_ANSWER,
     }
+

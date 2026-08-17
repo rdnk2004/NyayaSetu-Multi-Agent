@@ -53,6 +53,8 @@ def test_all_citations_verified():
     assert result["verified"] is True
     assert result["verified_sections"] == ["2(11)"]
     assert result["rejected_sections"] == []
+    assert result["details"]["2(11)"]["supported"] is True
+    assert "fault and imperfection" in result["details"]["2(11)"]["reason"]
     assert result["final_answer"] == qa_result["answer"]
     print("  Test 1 passed: All citations verified -> original answer retained.")
 
@@ -83,6 +85,8 @@ def test_citation_not_in_retrieved_chunks():
     assert result["verified"] is False
     assert result["verified_sections"] == []
     assert result["rejected_sections"] == ["999"]
+    assert result["details"]["999"]["supported"] is False
+    assert "not found in retrieved chunks" in result["details"]["999"]["reason"]
     assert result["final_answer"] == UNVERIFIED_FALLBACK_ANSWER
     print("  Test 2 passed: Unretrieved section rejected without LLM call -> safe fallback returned.")
 
@@ -116,6 +120,8 @@ def test_citation_unsupported_by_chunk_text():
     assert result["verified"] is False
     assert result["verified_sections"] == []
     assert result["rejected_sections"] == ["35"]
+    assert result["details"]["35"]["supported"] is False
+    assert "criminal penalties" in result["details"]["35"]["reason"]
     assert result["final_answer"] == UNVERIFIED_FALLBACK_ANSWER
     print("  Test 3 passed: Unsupported claim rejected by LLM audit -> safe fallback returned.")
 
@@ -146,6 +152,8 @@ def test_mixed_citations_partial_failure():
     assert result["verified"] is False
     assert result["verified_sections"] == ["2(11)"]
     assert result["rejected_sections"] == ["999"]
+    assert result["details"]["2(11)"]["supported"] is True
+    assert result["details"]["999"]["supported"] is False
     assert result["final_answer"] == UNVERIFIED_FALLBACK_ANSWER
     print("  Test 4 passed: Partial citation mismatch rejects entire unverified answer.")
 
@@ -170,8 +178,43 @@ def test_llm_malformed_response_fails_safe():
 
     assert result["verified"] is False
     assert result["rejected_sections"] == ["35"]
+    assert result["details"]["35"]["supported"] is False
+    assert "Failed to parse LLM verification response" in result["details"]["35"]["reason"]
     assert result["final_answer"] == UNVERIFIED_FALLBACK_ANSWER
     print("  Test 5 passed: Malformed LLM response fails safe -> safe fallback returned.")
+
+
+def test_logging_on_unsupported_and_parse_error():
+    """Test (6): Verify warning logs are emitted when citations are unsupported or fail parsing."""
+    qa_result = {
+        "answer": "Claim under Section 35.",
+        "cited_sections": ["35"],
+        "status": "answered",
+    }
+    retrieved_chunks = [
+        {
+            "id": "chunk_0025",
+            "text": "Statutory text for Section 35",
+            "metadata": {"section": "35"},
+        }
+    ]
+
+    # Test unsupported logging
+    mock_unsupported = json.dumps({"is_supported": False, "reason": "Text does not back up claim"})
+    with patch("citation_verification_agent.call_llm_structured", return_value=mock_unsupported), \
+         patch("citation_verification_agent.logger.warning") as mock_warn:
+        verify_citations(qa_result, retrieved_chunks)
+        assert mock_warn.called
+        assert "section '%s' not supported by text" in mock_warn.call_args[0][0]
+
+    # Test parse error logging
+    with patch("citation_verification_agent.call_llm_structured", return_value="{broken json"), \
+         patch("citation_verification_agent.logger.warning") as mock_warn:
+        verify_citations(qa_result, retrieved_chunks)
+        assert mock_warn.called
+        assert "failed to parse LLM response" in mock_warn.call_args[0][0]
+
+    print("  Test 6 passed: Warning logging on unsupported citation and parse error verified.")
 
 
 if __name__ == "__main__":
@@ -181,4 +224,5 @@ if __name__ == "__main__":
     test_citation_unsupported_by_chunk_text()
     test_mixed_citations_partial_failure()
     test_llm_malformed_response_fails_safe()
+    test_logging_on_unsupported_and_parse_error()
     print("\nAll Citation Verification Agent tests passed successfully!")
