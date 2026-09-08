@@ -49,6 +49,8 @@ def build_vector_store():
             "section": c["section"],
             "title": c["title"],
             "as_of_date": c["as_of_date"],
+            "source_url": c.get("source_url", ""),
+            "doc_type": c.get("doc_type", "statute"),
         }
         for c in chunks
     ]
