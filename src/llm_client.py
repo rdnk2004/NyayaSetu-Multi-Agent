@@ -101,6 +101,9 @@ def _execute_api_call_with_retries(prompt: str, max_retries: int = 2) -> str:
 
         except Exception as e:
             last_error = e
+            if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
+                # Quota errors won't succeed on retry - fail fast, don't burn more quota
+                raise RuntimeError(f"Gemini quota exceeded, not retrying: {e}")
             if attempt < max_retries:
                 time.sleep(1.5 * (attempt + 1))
                 continue
