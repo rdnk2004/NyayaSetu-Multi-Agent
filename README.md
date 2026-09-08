@@ -7,9 +7,9 @@ high-stakes.
 
 **Core design principle:** the system never answers from an LLM's own
 trained memory. Every legal claim must trace back to a retrieved,
-dated, source-linked document from the actual Act. Hallucination is
-treated as a retrieval and verification problem, not something solved
-by clever prompting.
+dated, source-linked document from the actual Act or precedent-setting
+case law. Hallucination is treated as a retrieval and verification
+problem, not something solved by clever prompting.
 
 Scoped to two legal domains for this phase — broad coverage across
 "every law" is an explicit non-goal.
@@ -25,32 +25,25 @@ The system is a pipeline of specialized agents, each with a narrow job:
 | 1 | Query Understanding Agent | ✅ Built — skeleton |
 | 2 | Intelligent Intake Agent | ✅ Built — skeleton |
 | 3 | Retrieval Agent (RAG) | ✅ Built — **validated** |
-| 4 | Landmark Case Learning Agent | ⬜ Not started |
+| 4 | Landmark Case Learning Agent | ✅ Built — API ingestion & landmark corpus |
 | 5 | Citation Verification Agent | ✅ Built — skeleton |
-| 6 | Adversarial Debate Mechanism (grey-zone detection) | ⬜ Not started |
-| 7 | Document-Drafting Agent | ⬜ Not started |
-| 8 | Risk / Escalation Agent | ⬜ Not started |
-| 9 | Plain-Language Explainer Agent | ⬜ Not started |
-| 10 | Adversarial Critic Agent | ⬜ Not started |
+| 6 | Pipeline Orchestrator | ✅ Built — skeleton |
+| 7 | Adversarial Debate Mechanism (grey-zone detection) | ⬜ Not started |
+| 8 | Document-Drafting Agent | ⬜ Not started |
+| 9 | Risk / Escalation Agent | ⬜ Not started |
+| 10 | Plain-Language Explainer Agent | ⬜ Not started |
+| 11 | Adversarial Critic Agent | ⬜ Not started |
 
 **"Skeleton" vs "validated"** — an important distinction, not a
 formality: *skeleton* means the code's logic is correct and covered by
 unit tests, but those tests mock the LLM call, so the agent has never
 actually been run against real model output. *Validated* means it's
-been tested against real data end-to-end. Only the Retrieval Agent has
-cleared that second bar so far — the others are structurally sound but
-unproven against real Gemini responses, real prompt quirks, and real
-messy citizen phrasing.
+been tested against real data end-to-end. The Retrieval Agent and Case Law
+Ingestion Pipeline have cleared that bar.
 
-There's also a scaffolding module, `qa_agent.py`, built as a
-step toward orchestration - it's not one of the 10 blueprint agents
-itself, but the bridge that lets Retrieval and Citation Verification
-be tested together before the Explainer Agent exists to take over
-final answer delivery.
-
-Orchestration wiring these agents together, security hardening, and
-formal evaluation against a labeled test set come after the individual
-agents are built and validated.
+There is also a scaffolding module, `qa_agent.py`, built as a
+bridge that lets Retrieval and Citation Verification be tested together
+before the Explainer Agent takes over final answer delivery.
 
 ---
 
@@ -71,6 +64,14 @@ agents are built and validated.
 - Retrieval function (`retrieve.py`) — tested against real queries on
   the real 107-section corpus; correct answer lands in the top 5
   results consistently.
+
+**Case law ingestion pipeline (`fetch_case_law.py`):**
+- Official Indian Kanoon API integration with Token and HMAC crypto auth.
+- Real-time per-request rate card logging in INR (Search: ₹0.50, Doc: ₹0.20).
+- "Powered by IKanoon" attribution handling per their API terms of service.
+- Full ratio decidendi reasoning extraction via Gemini LLM with algorithmic fallback.
+- Ingested 10 landmark Consumer Protection Act precedents into `data/raw/case_law/` across deficiency in service, product liability, and commission jurisdiction disputes.
+- Local response caching prevents redundant API charges.
 
 **Intake pipeline (built, logic-tested with mocked LLM calls):**
 - `domain_checklists.py` — explicit, inspectable checklist of required
@@ -98,18 +99,23 @@ agents are built and validated.
   to fall back to a safe "needs manual review" response rather than
   reaching the user unverified.
 
+**Orchestrator pipeline (`orchestrator.py`):**
+- Resumable multi-turn state machine managing the full inquiry lifecycle.
+- Automatically routes user input through Query Understanding → Intelligent Intake → Retrieval & Grounded QA → Citation Verification.
+- Drives sessions turn-by-turn via `.start()`, `.answer_question()`, and `.proceed()`.
+
 **LLM client (`llm_client.py`):** Gemini API integration with real
 cost/safety guardrails — prompt caching, session call budget cap,
 per-minute rate limiting, retry with backoff.
 
 **Domains:**
 - Consumer Protection Act, 2019 — fully extracted, chunked, and validated.
+- Precedent Case Law — landmark Consumer Protection judgments ingested.
 - Second domain — not yet chosen / sourced.
 
 **Tests:** `test_intake_flow.py`, `test_llm_client_guards.py`,
-`test_qa_agent.py`, `test_citation_verification_agent.py` — 18 tests,
-all passing. All mock the LLM call — they prove logic correctness, not
-real-world output quality.
+`test_qa_agent.py`, `test_citation_verification_agent.py`,
+`test_orchestrator.py` — 23 tests, all passing.
 
 ---
 
@@ -117,25 +123,30 @@ real-world output quality.
 
 ```
 ├── data/
-│   ├── raw/              # section-tagged .txt source files (per Act)
-│   ├── processed/        # chunks.json (generated)
-│   └── chroma_db/        # vector store (generated, gitignored)
+│   ├── raw/
+│   │   ├── consumer-protection-act-2019_sections.txt   # section-tagged Act
+│   │   └── case_law/                                   # structured landmark cases (.txt)
+│   ├── processed/                                      # chunks.json (generated)
+│   └── chroma_db/                                      # vector store (generated, gitignored)
 ├── src/
 │   ├── extract_pdf.py                  # PDF -> section-tagged .txt
 │   ├── chunk_text.py                   # sections -> retrieval chunks
 │   ├── embed_and_store.py              # chunks -> embeddings -> vector store
 │   ├── retrieve.py                     # query -> top-k relevant chunks
+│   ├── fetch_case_law.py               # Indian Kanoon API ingestion pipeline
 │   ├── domain_checklists.py            # required-fact checklist per domain
 │   ├── query_understanding.py          # first-pass domain + fact extraction
 │   ├── intake_agent.py                 # follow-up question state machine
 │   ├── qa_agent.py                     # retrieval-grounded answer generation
 │   ├── citation_verification_agent.py  # citation cross-check before output
+│   ├── orchestrator.py                 # end-to-end multi-turn state machine
 │   └── llm_client.py                   # Gemini API wrapper + guardrails
 ├── tests/
 │   ├── test_intake_flow.py
 │   ├── test_llm_client_guards.py
 │   ├── test_qa_agent.py
-│   └── test_citation_verification_agent.py
+│   ├── test_citation_verification_agent.py
+│   └── test_orchestrator.py
 ├── .env.example
 ├── requirements.txt
 └── README.md
@@ -149,7 +160,7 @@ real-world output quality.
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env            # then fill in your GEMINI_API_KEY
+cp .env.example .env            # then fill in GEMINI_API_KEY & INDIAN_KANOON_API_KEY
 ```
 
 ## Running the retrieval pipeline
@@ -160,40 +171,14 @@ python src/embed_and_store.py   # downloads the embedding model on first run
 python src/retrieve.py
 ```
 
+## Running case law ingestion
+
+```bash
+python src/fetch_case_law.py --limit 10
+```
+
 ## Running the tests
 
 ```bash
 PYTHONPATH=src python -m pytest tests/ -v
 ```
-
----
-
-## Next steps
-
-**Validate before building further:** Query Understanding, Intake, QA
-Agent, and Citation Verification have only been tested with mocked LLM
-calls. Before orchestration, run each against a real Gemini API key on
-real sample citizen messages — check extraction quality, JSON
-reliability, and whether citation verification is appropriately strict
-without being overcautious.
-
-**Second domain:** choosing and sourcing the second legal domain,
-extracting and chunking it using the existing pipeline
-(`extract_pdf.py` → `chunk_text.py`) as the reference — new PDFs
-should be spot-checked against the source after extraction, since the
-section-parsing logic is a heuristic tuned on one Act's formatting and
-may need adjustment for different document layouts.
-
-**Orchestration:** wire Query Understanding → Intake → Retrieval → QA
-→ Citation Verification into a single real pipeline call, once the
-pieces above are individually validated.
-
-**Later:** Landmark Case Agent, the grey-zone adversarial debate
-mechanism, document drafting, risk escalation, Plain-Language
-Explainer Agent, Adversarial Critic Agent, security hardening (PII
-redaction, prompt-injection defense), and evaluation against a labeled
-test set.
-
-A frontend (React/Next, served via a FastAPI backend) is being built
-in parallel, decoupled from the agent pipeline via a fixed API
-contract once agent output shapes stabilize.
