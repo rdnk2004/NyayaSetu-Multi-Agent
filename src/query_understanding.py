@@ -25,7 +25,10 @@ their situation in plain language. Your job has two parts:
 2. Extract ONLY facts the citizen actually stated. For the domain's \
 checklist fields below, fill in a value ONLY if it was explicitly \
 mentioned. Leave a field as null if it wasn't mentioned - do NOT guess \
-or infer facts that weren't said.
+or infer facts that weren't said. Do NOT fill a field with a generic word that just repeats the category itself \
+(e.g. writing "seller" for seller_or_provider, or "photographer" for what_was_bought_or_hired \
+when no actual name/business/platform was given). If only a vague reference was made, \
+leave that field null instead.
 
 Checklist fields for each domain:
 {checklist_summary}
