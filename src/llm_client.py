@@ -54,7 +54,7 @@ def _enforce_rate_limit():
 
 def _execute_api_call_with_retries(prompt: str, max_retries: int = 2) -> str:
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
     timeout = float(os.environ.get("API_TIMEOUT_SECONDS", "15.0"))
 
     last_error = None
