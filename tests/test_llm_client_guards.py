@@ -19,6 +19,7 @@ import llm_client
 def test_prompt_caching():
     llm_client._PROMPT_CACHE.clear()
     os.environ["GEMINI_API_KEY"] = "test_key_dummy"
+    os.environ["GEMINI_MODEL"] = "test_model_dummy"
     os.environ["ENABLE_PROMPT_CACHE"] = "true"
 
     mock_response = '{"domain": "Consumer Protection"}'
@@ -37,6 +38,7 @@ def test_prompt_caching():
 def test_session_limit_budget_guard():
     llm_client._SESSION_CALL_COUNT = 0
     os.environ["GEMINI_API_KEY"] = "test_key_dummy"
+    os.environ["GEMINI_MODEL"] = "test_model_dummy"
     os.environ["MAX_CALLS_PER_SESSION"] = "2"
     os.environ["ENABLE_PROMPT_CACHE"] = "false"
 

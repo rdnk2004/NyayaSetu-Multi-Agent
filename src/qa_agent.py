@@ -46,17 +46,34 @@ Respond with ONLY a JSON object, no other text, in this exact format:
 
 def _build_query_from_facts(facts: dict) -> str:
     """
-    Build a natural-language search query from the citizen's collected facts.
+    Build a focused natural-language search query from the citizen's collected facts.
+    Prioritizes substantive grievance facts (what was bought, what went wrong, attempted resolution)
+    over transactional metadata (payment method, merchant names) to prevent semantic vector dilution.
     """
     if not facts or not isinstance(facts, dict):
         return ""
 
+    product = str(facts.get("what_was_bought_or_hired", "")).strip()
+    issue = str(facts.get("what_went_wrong", "")).strip()
+    resolution = str(facts.get("resolution_attempted", "")).strip()
+
     parts = []
-    for v in facts.values():
-        if v is not None:
-            v_str = str(v).strip()
-            if v_str:
-                parts.append(v_str)
+    if product:
+        parts.append(product)
+    if issue:
+        parts.append(issue)
+        # Anchor legal embedding with core statutory concepts
+        parts.append("defect product liability deficiency in service")
+    if resolution:
+        parts.append(resolution)
+
+    if not parts:
+        # Fallback to any provided facts if standard checklist keys aren't present
+        for v in facts.values():
+            if v is not None:
+                v_str = str(v).strip()
+                if v_str:
+                    parts.append(v_str)
 
     return " ".join(parts)
 
@@ -127,6 +144,7 @@ def answer_question(case_brief: dict) -> dict:
         facts = {}
 
     query = _build_query_from_facts(facts)
+    print(f"\n--- QA Agent built query: '{query}' ---\n")
     if not query:
         return {
             "answer": "",

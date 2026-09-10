@@ -52,17 +52,34 @@ def _enforce_rate_limit():
     _CALL_TIMESTAMPS.append(time.time())
 
 
-def _execute_api_call_with_retries(prompt: str, max_retries: int = 2) -> str:
+_GENAI_CLIENT = None
+_GENAI_CLIENT_KEY = None
+
+
+def _get_genai_client(api_key: str):
+    global _GENAI_CLIENT, _GENAI_CLIENT_KEY
+    if _GENAI_CLIENT is None or _GENAI_CLIENT_KEY != api_key:
+        from google import genai
+        _GENAI_CLIENT = genai.Client(api_key=api_key)
+        _GENAI_CLIENT_KEY = api_key
+    return _GENAI_CLIENT
+
+
+def _execute_api_call_with_retries(prompt: str, max_retries: int = 3) -> str:
+    global _GENAI_CLIENT
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    model_name = os.environ.get("GEMINI_MODEL")
+    if not model_name or not model_name.strip():
+        raise ValueError(
+            "GEMINI_MODEL is not set. Please specify GEMINI_MODEL in your '.env' file."
+        )
     timeout = float(os.environ.get("API_TIMEOUT_SECONDS", "15.0"))
 
     last_error = None
     for attempt in range(max_retries + 1):
         try:
             try:
-                from google import genai
-                client = genai.Client(api_key=api_key)
+                client = _get_genai_client(api_key)
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
@@ -101,11 +118,19 @@ def _execute_api_call_with_retries(prompt: str, max_retries: int = 2) -> str:
 
         except Exception as e:
             last_error = e
-            if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
+            err_msg = str(e)
+            if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg:
                 # Quota errors won't succeed on retry - fail fast, don't burn more quota
                 raise RuntimeError(f"Gemini quota exceeded, not retrying: {e}")
+
+            # Reset client session in case socket is in a bad state
+            if "10013" in err_msg or "socket" in err_msg.lower():
+                _GENAI_CLIENT = None
+
             if attempt < max_retries:
-                time.sleep(1.5 * (attempt + 1))
+                # Exponential backoff with longer delay for 500/503/socket errors
+                backoff = 2.5 * (attempt + 1)
+                time.sleep(backoff)
                 continue
 
     raise RuntimeError(f"Gemini API call failed after {max_retries + 1} attempts: {last_error}")
@@ -119,6 +144,13 @@ def call_llm_structured(prompt: str) -> str:
         raise ValueError(
             "GEMINI_API_KEY is missing or invalid. Please open the '.env' file in the project root "
             "and paste your Gemini API key: GEMINI_API_KEY=AIzaSy..."
+        )
+
+    model_name = os.environ.get("GEMINI_MODEL")
+    if not model_name or not model_name.strip():
+        raise ValueError(
+            "GEMINI_MODEL is missing or invalid. Please open the '.env' file in the project root "
+            "and set GEMINI_MODEL (e.g. GEMINI_MODEL=gemini-3.5-flash-lite)."
         )
 
     cache_enabled = os.environ.get("ENABLE_PROMPT_CACHE", "true").lower() == "true"
