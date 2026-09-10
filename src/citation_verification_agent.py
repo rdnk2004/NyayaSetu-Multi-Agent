@@ -36,6 +36,7 @@ QA Agent's Answer:
 Evaluate whether the cited section text actually provides factual and legal support for the relevant statements made in the answer.
 Do not assume or extrapolate beyond what the text explicitly states.
 If the text does not genuinely support the claim, or if the claim contradicts or misrepresents the text, mark is_supported as false.
+Note: the QA Agent's answer may combine multiple legal points, each supported by a DIFFERENT cited section. Your task is ONLY to check whether THIS section's text supports the specific claim(s) that would reasonably be attributed to Section {section} - not the entire answer. It is normal and expected for other parts of the answer to be grounded in other, separately-cited sections instead. Do NOT reject this citation merely because this section's text doesn't cover the whole answer - only reject it if this section's text fails to support the portion of the answer that actually relates to it.
 
 Respond ONLY with a JSON object in this exact format:
 {{

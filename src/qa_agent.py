@@ -34,6 +34,7 @@ Rules:
 1. Answer ONLY using the information contained in the retrieved legal chunks above. Do NOT use outside knowledge, speculate, or guess.
 2. Cite the exact section number(s) (e.g. "Section 2(11)", "Section 35") from the chunks that support your answer.
 3. If none of the retrieved chunks provide enough information to answer the question, or if the chunks are not relevant, you MUST set "status" to "unclear", "cited_sections" to [], and "answer" to a brief explanation stating that the retrieved provisions do not cover the issue. Never guess or hallucinate.
+4. If your answer combines multiple legal points (e.g. WHY someone is liable, and WHAT remedy is available), cite the SPECIFIC section that supports EACH specific point separately. Do not attribute a remedy, penalty, or procedural power to a section that only establishes liability or a definition, even if both sections are relevant to the same overall answer.
 
 Respond with ONLY a JSON object, no other text, in this exact format:
 {{
