@@ -182,110 +182,18 @@ def chunk_sections(sections: list[dict], max_words: int = 350) -> list[dict]:
 
     return chunks
 
-
-def parse_case_law(raw_text: str) -> dict:
-    """Parse a structured case law file into a case dict."""
-    lines = raw_text.strip().split("\n")
-    case = {
-        "case_title": "",
-        "court": "",
-        "date": "",
-        "source_url": "",
-        "attribution": "",
-        "reasoning": "",
-    }
-    in_reasoning = False
-    reasoning_lines = []
-
-    for line in lines:
-        if in_reasoning:
-            reasoning_lines.append(line)
-            continue
-        line_s = line.strip()
-        if line_s.startswith("CASE_TITLE:"):
-            case["case_title"] = line_s.split(":", 1)[1].strip()
-        elif line_s.startswith("COURT:"):
-            case["court"] = line_s.split(":", 1)[1].strip()
-        elif line_s.startswith("DATE:"):
-            case["date"] = line_s.split(":", 1)[1].strip()
-        elif line_s.startswith("SOURCE_URL:"):
-            case["source_url"] = line_s.split(":", 1)[1].strip()
-        elif line_s.startswith("ATTRIBUTION:"):
-            case["attribution"] = line_s.split(":", 1)[1].strip()
-        elif line_s.startswith("REASONING:"):
-            in_reasoning = True
-            remainder = line_s.split(":", 1)[1].strip()
-            if remainder:
-                reasoning_lines.append(remainder)
-
-    case["reasoning"] = "\n".join(reasoning_lines).strip()
-    return case
-
-
-def chunk_case_law(case: dict, max_words: int = 350) -> list[dict]:
-    """Turn a case law record into retrieval chunks."""
-    text = case.get("reasoning", "")
-    if not text:
-        return []
-
-    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
-    pieces = []
-    current_piece, current_len = [], 0
-
-    for para in paragraphs:
-        p_len = len(para.split())
-        if current_len + p_len > max_words and current_piece:
-            pieces.append("\n\n".join(current_piece))
-            current_piece, current_len = [], 0
-        current_piece.append(para)
-        current_len += p_len
-
-    if current_piece:
-        pieces.append("\n\n".join(current_piece))
-
-    safe_title = re.sub(r"[^a-zA-Z0-9]", "_", case.get("case_title", "case"))[:30].strip("_")
-    chunks = []
-    for i, piece in enumerate(pieces):
-        chunks.append({
-            "id": f"case_{safe_title}_{i+1:02d}",
-            "text": piece,
-            "source_act": f"Precedent ({case.get('court', 'Court')})",
-            "section": case.get("case_title", "Precedent Case"),
-            "title": case.get("case_title", ""),
-            "as_of_date": case.get("date", ""),
-            "source_url": case.get("source_url", ""),
-            "doc_type": "case_law",
-            "part": f"{i+1}/{len(pieces)}" if len(pieces) > 1 else "1/1",
-        })
-    return chunks
-
-
 if __name__ == "__main__":
     raw_dir = Path(__file__).parent.parent / "data" / "raw"
-    case_law_dir = raw_dir / "case_law"
     processed_dir = Path(__file__).parent.parent / "data" / "processed"
     processed_dir.mkdir(exist_ok=True)
 
     all_chunks = []
-    # 1. Parse statutory sections
     for raw_file in raw_dir.glob("*.txt"):
         raw_text = raw_file.read_text(encoding="utf-8")
         sections = parse_sections(raw_text)
         chunks = chunk_sections(sections)
         all_chunks.extend(chunks)
         print(f"[Statute] {raw_file.name}: {len(sections)} sections -> {len(chunks)} chunks")
-
-    # 2. Parse precedent case law
-    if case_law_dir.exists():
-        case_files = list(case_law_dir.glob("*.txt"))
-        case_chunks_count = 0
-        for case_file in case_files:
-            case_text = case_file.read_text(encoding="utf-8")
-            case_data = parse_case_law(case_text)
-            c_chunks = chunk_case_law(case_data)
-            all_chunks.extend(c_chunks)
-            case_chunks_count += len(c_chunks)
-        print(f"[Case Law] {len(case_files)} cases -> {case_chunks_count} chunks")
 
     out_path = processed_dir / "chunks.json"
     out_path.write_text(json.dumps(all_chunks, indent=2), encoding="utf-8")
