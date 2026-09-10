@@ -26,7 +26,7 @@ The system is a pipeline of 10 specialized agents, each with a narrow job:
 | 2 | Intelligent Intake Agent | ✅ Built — skeleton |
 | 3 | Retrieval Agent (RAG) | ✅ Built — **validated** |
 | 4 | Landmark Case Learning Agent | ✅ Built — **validated** |
-| 5 | Citation Verification Agent | ✅ Built — skeleton |
+| 5 | Citation Verification Agent | ✅ Built — **validated** |
 | 6 | Adversarial Debate Mechanism (grey-zone detection) | ⬜ Not started |
 | 7 | Document-Drafting Agent | ⬜ Not started |
 | 8 | Risk / Escalation Agent | ⬜ Not started |
@@ -39,34 +39,57 @@ unit tests, but those tests mock the LLM call, so the agent has never
 actually been run against real model output. *Validated* means it's
 been run against real data end-to-end, including a manual spot-check
 of specific claims (e.g. confirming a cited section number actually
-appears in the source text, not invented).
+appears in the source text, not invented) — and, for Citation
+Verification specifically, a real multi-round debugging cycle that
+found and fixed genuine bugs (see below).
 
 **Infrastructure, not one of the 10 agents:**
 - **Pipeline Orchestrator** (`orchestrator.py`) — a resumable,
   multi-turn state machine wiring Query Understanding → Intake →
-  Retrieval → QA → Citation Verification into one flow. Its own
-  mechanics (multi-turn state transitions, resuming after each answer)
-  have been run successfully against a real multi-turn conversation.
-  See **Known Issues** below for an open finding from that same run.
+  Retrieval → QA → Citation Verification into one flow. Validated
+  end-to-end against a real multi-turn conversation (see Resolved
+  Issues below).
 - **QA Agent** (`qa_agent.py`) — a scaffolding module bridging
   Retrieval and Citation Verification before the Explainer Agent
   exists to take over final answer delivery.
 
 ---
 
-## Known Issues (open, unresolved)
+## Resolved Issues (real bugs found via end-to-end testing)
 
-**Orchestrator/QA answer completeness on hazard-type cases.** A real
-end-to-end run (citizen reporting a microwave that "sparks violently")
-correctly completed the full pipeline and returned a *verified* answer
-— but that answer cited only jurisdiction (`34(1)`, which court to file
-with) and omitted the actual product-defect/hazard grounds a citizen
-in that situation would need. The citation itself was verified true,
-but the answer was incomplete relative to the question asked. Not yet
-determined whether this is a retrieval gap (right chunk never surfaced
-in top-k) or a QA Agent prompt issue (right chunk retrieved but not
-selected). Next debugging step: inspect the actual retrieved chunks
-for that query before deciding a fix.
+A real multi-turn test case (citizen reporting a microwave that
+"sparks violently") surfaced three separate, genuine bugs in sequence
+— worth documenting since each was found through actual end-to-end
+testing, not code review alone:
+
+1. **Vector store contamination.** `chunk_text.py` had a leftover code
+   path (predating `index_case_law.py`) that parsed case law files and
+   merged them into the same `legal_chunks` collection used for
+   statutes. Case law records were showing up disguised as statute
+   sections in retrieval results. Fixed by removing the case-law
+   parsing entirely from `chunk_text.py` — that responsibility belongs
+   solely to `index_case_law.py`, which correctly uses a separate
+   `case_law` collection.
+2. **Citation Verification rejecting valid multi-section answers.**
+   When an answer correctly cited two different sections for two
+   different sub-claims (e.g. Section 84 for liability, Section 39(1)
+   for remedies), the verifier was checking each section's text
+   against the *entire* answer, rejecting valid citations simply
+   because no single section covered the whole response. Fixed by
+   updating the verification prompt to check only the portion of the
+   answer attributable to that specific section.
+3. Along the way, confirmed a **non-bug system characteristic worth
+   knowing**: `understand_query()`'s LLM-based fact extraction is not
+   perfectly deterministic — the same citizen message can produce
+   slightly different extracted facts across runs, which can affect
+   downstream retrieval. Not something to "fix," just something to
+   account for when debugging an unexpected result — rerun before
+   assuming a retrieval or prompt bug.
+
+Diagnostic print statements added during this investigation
+(`qa_agent.py`'s built-query print, `orchestrator.py`'s retrieved-chunks
+print) are intentionally still in the code — useful for future
+debugging, kept as a conscious choice rather than forgotten scaffolding.
 
 ---
 
@@ -80,13 +103,16 @@ for that query before deciding a fix.
 - Legal-structure-aware chunking (`chunk_text.py`) — splits on numbered
   sub-clauses (e.g. definitions, sub-sections) rather than raw word
   count, so each chunk is one atomic, precisely citable legal unit
-  (e.g. `2(11)`, not a fragment cut mid-sentence).
+  (e.g. `2(11)`, not a fragment cut mid-sentence). Statute-only —
+  case law chunking is handled separately by `index_case_law.py`.
 - Embedding + vector store (`embed_and_store.py`) — local, free
   embeddings (`multi-qa-mpnet-base-dot-v1`, tuned for question→passage
   matching) stored in Chroma with inner-product distance.
 - Retrieval function (`retrieve.py`) — tested against real queries on
   the real 107-section corpus; correct answer lands in the top 5
-  results consistently.
+  results consistently. A `scripts/check_contamination.py` utility
+  exists to verify the `legal_chunks` collection only contains real
+  statute entries.
 
 **Case law pipeline (built and validated):**
 - `fetch_case_law.py` — Indian Kanoon API integration, supporting both
@@ -118,25 +144,29 @@ for that query before deciding a fix.
   facts from a citizen's first message. Never guesses — leaves a field
   blank rather than inferring an unstated fact (including refusing to
   fill a field with a generic placeholder word like "seller" when no
-  real name was given).
+  real name was given). Fact extraction is LLM-based and can vary
+  slightly run to run — see Resolved Issues above.
 - `intake_agent.py` — asks one follow-up question at a time for the
   highest-priority missing field, stops once the checklist is
   satisfied (or a safety-valve question limit is hit), runs a final
   "anything critical missing?" pass before handoff.
 
-**Answer + verification pipeline (built, logic-tested with mocked LLM calls):**
+**Answer + verification pipeline (built and validated end-to-end):**
 - `qa_agent.py` — takes a completed case brief, retrieves candidate
   chunks, and answers strictly grounded in retrieved text, citing
-  exact section numbers. Returns "unclear" rather than guessing when
-  retrieved chunks don't support an answer. Exposes the retrieved
+  exact section numbers, attributing each sub-claim to the section
+  that actually supports it. Returns "unclear" rather than guessing
+  when retrieved chunks don't support an answer. Exposes the retrieved
   chunks it used, so downstream verification doesn't need to
   re-retrieve.
 - `citation_verification_agent.py` — cross-checks every cited section
   against what was actually retrieved (exact match), then uses an LLM
-  judgment pass to confirm the cited text genuinely supports the
-  claim. Any citation that fails either check causes the whole answer
-  to fall back to a safe "needs manual review" response rather than
-  reaching the user unverified. Logs every rejection with a reason.
+  judgment pass to confirm the cited section's text genuinely supports
+  the specific claim attributed to it (not the entire answer — fixed
+  after real-world testing, see Resolved Issues). Any citation that
+  fails either check causes that portion of the answer to fall back to
+  a safe "needs manual review" response rather than reaching the user
+  unverified. Logs every rejection with a reason.
 
 **Orchestrator (`orchestrator.py`):**
 - Resumable multi-turn state machine: `start()` → `answer_question()`
@@ -144,9 +174,9 @@ for that query before deciding a fix.
 - Routes a citizen's message through Query Understanding → Intake →
   QA → Citation Verification automatically, surfacing intake questions
   one at a time to the caller.
-- State-machine mechanics validated against a real multi-turn
-  conversation (see Known Issues above for a content-quality finding
-  from that same run).
+- Validated end-to-end against multiple real multi-turn conversations,
+  including a full debugging cycle that resolved three real bugs (see
+  Resolved Issues above).
 
 **LLM client (`llm_client.py`):** Gemini API integration with real
 cost/safety guardrails — prompt caching, session call budget cap,
@@ -173,12 +203,12 @@ passing.
 │   ├── raw/
 │   │   ├── consumer-protection-act-2019_sections.txt   # section-tagged Act
 │   │   └── case_law/                                   # structured landmark cases (.txt)
-│   ├── processed/                                      # chunks.json (generated)
+│   ├── processed/                                      # chunks.json (statute only, generated)
 │   └── chroma_db/                                      # vector store (generated, gitignored)
-│                                                        # two collections: statute chunks + case_law
+│                                                        # two collections: legal_chunks + case_law
 ├── src/
 │   ├── extract_pdf.py                  # PDF -> section-tagged .txt
-│   ├── chunk_text.py                   # sections -> retrieval chunks
+│   ├── chunk_text.py                   # statute sections -> retrieval chunks
 │   ├── embed_and_store.py              # chunks -> embeddings -> vector store
 │   ├── retrieve.py                     # query -> top-k relevant statute chunks
 │   ├── fetch_case_law.py               # Indian Kanoon API ingestion pipeline
@@ -188,14 +218,15 @@ passing.
 │   ├── query_understanding.py          # first-pass domain + fact extraction
 │   ├── intake_agent.py                 # follow-up question state machine
 │   ├── qa_agent.py                     # retrieval-grounded answer generation
-│   ├── citation_verification_agent.py  # citation cross-check before output
+│   ├── citation_verification_agent.py  # per-section citation cross-check
 │   ├── landmark_case_agent.py          # precedent retrieval + grounded explanation
 │   ├── orchestrator.py                 # end-to-end multi-turn state machine
 │   └── llm_client.py                   # Gemini API wrapper + guardrails
-├── scripts/                            # real-API validation scripts (not mocked)
+├── scripts/                            # real-API validation & diagnostic scripts
 │   ├── validate_real_llm.py            # Query Understanding + Intake, real key
 │   ├── validate_orchestrator_real.py   # full pipeline, real key
-│   └── validate_landmark_case_real.py  # Landmark Case Agent, real key
+│   ├── validate_landmark_case_real.py  # Landmark Case Agent, real key
+│   └── check_contamination.py          # verifies legal_chunks has no stray case-law entries
 ├── tests/
 │   ├── test_intake_flow.py
 │   ├── test_llm_client_guards.py
@@ -225,6 +256,7 @@ cp .env.example .env            # then fill in GEMINI_API_KEY & Indian Kanoon cr
 python src/chunk_text.py
 python src/embed_and_store.py   # downloads the embedding model on first run
 python src/retrieve.py
+python scripts/check_contamination.py   # verify legal_chunks is clean
 ```
 
 ## Running case law ingestion + indexing
@@ -253,11 +285,6 @@ python scripts/validate_landmark_case_real.py
 
 ## Next steps
 
-**Resolve the open orchestrator finding** (see Known Issues) before
-building further on top of QA/Citation Verification — inspect actual
-retrieved chunks for the microwave-type query to determine whether
-it's a retrieval or a prompt-selection issue.
-
 **Adversarial Debate Mechanism** — two agents argue opposing
 interpretations of the same provision; a judge agent surfaces genuine
 disagreement as a grey zone.
@@ -275,3 +302,4 @@ against a labeled test set.
 A frontend (React/Next, served via a FastAPI backend) is being built
 in parallel, decoupled from the agent pipeline via a fixed API
 contract once agent output shapes stabilize.
+```
