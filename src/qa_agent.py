@@ -54,9 +54,9 @@ def _build_query_from_facts(facts: dict) -> str:
     if not facts or not isinstance(facts, dict):
         return ""
 
-    product = str(facts.get("what_was_bought_or_hired", "")).strip()
-    issue = str(facts.get("what_went_wrong", "")).strip()
-    resolution = str(facts.get("resolution_attempted", "")).strip()
+    product = str(facts.get("what_was_bought_or_hired") or "").strip()
+    issue = str(facts.get("what_went_wrong") or "").strip()
+    resolution = str(facts.get("resolution_attempted") or "").strip()
 
     parts = []
     if product:
@@ -145,7 +145,6 @@ def answer_question(case_brief: dict) -> dict:
         facts = {}
 
     query = _build_query_from_facts(facts)
-    print(f"\n--- QA Agent built query: '{query}' ---\n")
     if not query:
         return {
             "answer": "",

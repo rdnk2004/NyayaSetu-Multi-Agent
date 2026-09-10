@@ -127,12 +127,6 @@ class CaseSession:
         case_brief = self.intake_session.to_case_brief()
         qa_result = answer_question(case_brief)
 
-        # --- TEMPORARY DIAGNOSTIC PRINT - remove after we diagnose the microwave case ---
-        print("\n--- Retrieved chunks (section : title) ---")
-        for c in qa_result.get("retrieved_chunks", []):
-            print(f"  {c['metadata']['section']} : {c['metadata'].get('title', '')}")
-        # --- END TEMPORARY DIAGNOSTIC PRINT ---
-
         retrieved_chunks = qa_result.get("retrieved_chunks", [])
         verification = verify_citations(qa_result, retrieved_chunks)
 
