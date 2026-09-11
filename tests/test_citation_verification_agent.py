@@ -217,6 +217,71 @@ def test_logging_on_unsupported_and_parse_error():
     print("  Test 6 passed: Warning logging on unsupported citation and parse error verified.")
 
 
+def test_multiple_citations_supporting_different_subclaims():
+    """
+    Regression Test:
+    A QA answer cites TWO different sections for two DIFFERENT sub-claims (e.g. Section 2(11)
+    supports 'liability/deficiency', Section 39 supports 'remedy/refund').
+    Each section's actual chunk text genuinely supports only its own sub-claim.
+    Assert BOTH citations pass verification (not rejected for failing to cover the whole answer alone).
+    """
+    qa_result = {
+        "answer": (
+            "Under Section 2(11), the delivery of defective goods constitutes a deficiency in service "
+            "attracting liability. Under Section 39, the District Commission has the power to order a full "
+            "refund and compensation for the consumer's loss."
+        ),
+        "cited_sections": ["2(11)", "39"],
+        "status": "answered",
+    }
+
+    retrieved_chunks = [
+        {
+            "id": "chunk_0010",
+            "text": "deficiency means any fault, imperfection, shortcoming or inadequacy in the quality, nature and manner of performance...",
+            "metadata": {
+                "section": "2(11)",
+                "title": "Definitions",
+                "source_act": "Consumer Protection Act, 2019",
+            },
+        },
+        {
+            "id": "chunk_0039",
+            "text": "Where the District Commission is satisfied that any of the allegations contained in the complaint are proved, it shall issue an order to return to the complainant the price, or to pay compensation...",
+            "metadata": {
+                "section": "39",
+                "title": "Findings of District Commission",
+                "source_act": "Consumer Protection Act, 2019",
+            },
+        },
+    ]
+
+    def mock_llm_verification(prompt: str) -> str:
+        if "Section 2(11)" in prompt:
+            return json.dumps({
+                "is_supported": True,
+                "reason": "Section 2(11) text genuinely supports the deficiency in service / liability sub-claim.",
+            })
+        elif "Section 39" in prompt:
+            return json.dumps({
+                "is_supported": True,
+                "reason": "Section 39 text genuinely supports the remedy / refund sub-claim.",
+            })
+        return json.dumps({"is_supported": False, "reason": "Unknown section in prompt."})
+
+    with patch("citation_verification_agent.call_llm_structured", side_effect=mock_llm_verification) as mock_call:
+        result = verify_citations(qa_result, retrieved_chunks)
+
+    assert mock_call.call_count == 2
+    assert result["verified"] is True
+    assert result["verified_sections"] == ["2(11)", "39"]
+    assert result["rejected_sections"] == []
+    assert result["details"]["2(11)"]["supported"] is True
+    assert result["details"]["39"]["supported"] is True
+    assert result["final_answer"] == qa_result["answer"]
+    print("  Test 7 passed: Multiple citations supporting separate sub-claims both verified.")
+
+
 if __name__ == "__main__":
     print("\nRunning Citation Verification Agent Tests:")
     test_all_citations_verified()
@@ -225,4 +290,5 @@ if __name__ == "__main__":
     test_mixed_citations_partial_failure()
     test_llm_malformed_response_fails_safe()
     test_logging_on_unsupported_and_parse_error()
+    test_multiple_citations_supporting_different_subclaims()
     print("\nAll Citation Verification Agent tests passed successfully!")

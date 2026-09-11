@@ -19,7 +19,7 @@ src_dir = Path(__file__).resolve().parent.parent / "src"
 if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
-from qa_agent import answer_question
+from qa_agent import answer_question, _build_query_from_facts
 
 
 def test_normal_case_returns_answer_with_citations():
@@ -177,12 +177,55 @@ def test_empty_or_invalid_case_brief():
     print("  Invalid input edge cases passed.")
 
 
+def test_facts_with_explicit_none_does_not_contain_none_in_query():
+    """
+    Regression Test:
+    When case_brief["facts"] contains a key with an explicit None value,
+    the built search query must never contain the literal substring 'None'.
+    """
+    case_brief = {
+        "domain": "Consumer Protection",
+        "facts": {
+            "what_was_bought_or_hired": None,
+            "what_went_wrong": "Refrigerator stopped cooling within 2 days",
+            "resolution_attempted": None,
+            "seller_or_provider": None,
+        },
+        "ready": True,
+    }
+
+    # Verify query built directly from facts dict
+    query = _build_query_from_facts(case_brief["facts"])
+    assert "None" not in query
+    assert "Refrigerator stopped cooling within 2 days" in query
+
+    # Also test fallback path when standard checklist keys are not present and some values are None
+    custom_facts = {
+        "device_type": None,
+        "complaint_details": "Defective battery exploded",
+        "notes": None,
+    }
+    fallback_query = _build_query_from_facts(custom_facts)
+    assert "None" not in fallback_query
+    assert "Defective battery exploded" in fallback_query
+
+    # Verify through answer_question to ensure the query passed to retrieve() contains no 'None'
+    with patch("qa_agent.retrieve", return_value=[]) as mock_retrieve:
+        answer_question(case_brief)
+        assert mock_retrieve.called
+        passed_query = mock_retrieve.call_args[0][0]
+        assert "None" not in passed_query
+
+    print("  Explicit None values test passed: Built query contains no literal 'None'.")
+
+
 if __name__ == "__main__":
     tests = [
         test_normal_case_returns_answer_with_citations,
         test_no_relevant_retrieved_chunks_returns_unclear,
         test_malformed_llm_json_handled_without_crashing,
         test_empty_or_invalid_case_brief,
+        test_facts_with_explicit_none_does_not_contain_none_in_query,
     ]
     print("\nRunning QA Agent Unit Tests:")
     for t in tests:
