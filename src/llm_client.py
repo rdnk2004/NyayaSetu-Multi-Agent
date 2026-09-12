@@ -20,9 +20,66 @@ if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 load_dotenv()
 
-_PROMPT_CACHE: dict[str, str] = {}
+class LLMSessionGuard:
+    """
+    Manages per-session state and safety guardrails:
+      - prompt_cache: cached LLM responses keyed by prompt string
+      - session_call_count: total calls made during this session
+      - call_timestamps: history of call timestamps for rate limiting
+    """
+
+    def __init__(
+        self,
+        max_calls_per_session: int | None = None,
+        max_calls_per_minute: int | None = None,
+    ):
+        self.prompt_cache: dict[str, str] = {}
+        self.session_call_count: int = 0
+        self.call_timestamps: list[float] = []
+        self.max_calls_per_session: int | None = max_calls_per_session
+        self.max_calls_per_minute: int | None = max_calls_per_minute
+
+    def enforce_rate_limit(self) -> None:
+        max_per_minute = (
+            self.max_calls_per_minute
+            if self.max_calls_per_minute is not None
+            else int(os.environ.get("MAX_CALLS_PER_MINUTE", "30"))
+        )
+        now = time.time()
+        self.call_timestamps = [t for t in self.call_timestamps if now - t < 60]
+
+        if len(self.call_timestamps) >= max_per_minute:
+            oldest = self.call_timestamps[0]
+            wait_time = 60 - (now - oldest)
+            if wait_time > 0:
+                time.sleep(wait_time)
+
+        self.call_timestamps.append(time.time())
+
+    def check_budget(self) -> None:
+        max_calls = (
+            self.max_calls_per_session
+            if self.max_calls_per_session is not None
+            else int(os.environ.get("MAX_CALLS_PER_SESSION", "200"))
+        )
+        if self.session_call_count >= max_calls:
+            raise RuntimeError(
+                f"Budget Protection Triggered: this session has already made "
+                f"{self.session_call_count} calls, hitting MAX_CALLS_PER_SESSION={max_calls}. "
+                f"Raise the limit in .env if this is intentional."
+            )
+
+    def clear_cache(self) -> None:
+        self.prompt_cache.clear()
+
+    def reset_call_count(self) -> None:
+        self.session_call_count = 0
+
+
+_DEFAULT_SESSION_GUARD = LLMSessionGuard()
+_PROMPT_CACHE = _DEFAULT_SESSION_GUARD.prompt_cache
 _SESSION_CALL_COUNT = 0
-_CALL_TIMESTAMPS: list[float] = []
+_CALL_TIMESTAMPS = _DEFAULT_SESSION_GUARD.call_timestamps
 
 
 def _strip_markdown_code_fences(text: str) -> str:
@@ -35,22 +92,6 @@ def _strip_markdown_code_fences(text: str) -> str:
             lines = lines[:-1]
         text = "\n".join(lines).strip()
     return text
-
-
-def _enforce_rate_limit():
-    global _CALL_TIMESTAMPS
-    max_per_minute = int(os.environ.get("MAX_CALLS_PER_MINUTE", "30"))
-    now = time.time()
-    _CALL_TIMESTAMPS = [t for t in _CALL_TIMESTAMPS if now - t < 60]
-
-    if len(_CALL_TIMESTAMPS) >= max_per_minute:
-        oldest = _CALL_TIMESTAMPS[0]
-        wait_time = 60 - (now - oldest)
-        if wait_time > 0:
-            time.sleep(wait_time)
-
-    _CALL_TIMESTAMPS.append(time.time())
-
 
 _GENAI_CLIENT = None
 _GENAI_CLIENT_KEY = None
@@ -68,10 +109,10 @@ def _get_genai_client(api_key: str):
 def _execute_api_call_with_retries(prompt: str, max_retries: int = 3) -> str:
     global _GENAI_CLIENT
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    model_name = os.environ.get("GEMINI_MODEL")
-    if not model_name or not model_name.strip():
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
+    if not model_name:
         raise ValueError(
-            "GEMINI_MODEL is not set. Please specify GEMINI_MODEL in your '.env' file."
+            "GEMINI_MODEL is empty. Please set GEMINI_MODEL in your '.env' file."
         )
     timeout = float(os.environ.get("API_TIMEOUT_SECONDS", "15.0"))
 
@@ -136,8 +177,11 @@ def _execute_api_call_with_retries(prompt: str, max_retries: int = 3) -> str:
     raise RuntimeError(f"Gemini API call failed after {max_retries + 1} attempts: {last_error}")
 
 
-def call_llm_structured(prompt: str) -> str:
-    global _SESSION_CALL_COUNT
+def call_llm_structured(
+    prompt: str,
+    session_guard: LLMSessionGuard | None = None,
+) -> str:
+    global _SESSION_CALL_COUNT, _PROMPT_CACHE
 
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key or api_key.strip() == "" or api_key == "your_gemini_api_key_here":
@@ -146,31 +190,32 @@ def call_llm_structured(prompt: str) -> str:
             "and paste your Gemini API key: GEMINI_API_KEY=AIzaSy..."
         )
 
-    model_name = os.environ.get("GEMINI_MODEL")
-    if not model_name or not model_name.strip():
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
+    if not model_name:
         raise ValueError(
-            "GEMINI_MODEL is missing or invalid. Please open the '.env' file in the project root "
-            "and set GEMINI_MODEL (e.g. GEMINI_MODEL=gemini-3.5-flash-lite)."
+            "GEMINI_MODEL is empty. Please set GEMINI_MODEL in your '.env' file."
         )
+
+    if session_guard is None:
+        guard = _DEFAULT_SESSION_GUARD
+        guard.session_call_count = _SESSION_CALL_COUNT
+    else:
+        guard = session_guard
 
     cache_enabled = os.environ.get("ENABLE_PROMPT_CACHE", "true").lower() == "true"
-    if cache_enabled and prompt in _PROMPT_CACHE:
-        return _PROMPT_CACHE[prompt]
+    if cache_enabled and prompt in guard.prompt_cache:
+        return guard.prompt_cache[prompt]
 
-    max_calls = int(os.environ.get("MAX_CALLS_PER_SESSION", "200"))
-    if _SESSION_CALL_COUNT >= max_calls:
-        raise RuntimeError(
-            f"Budget Protection Triggered: this session has already made "
-            f"{_SESSION_CALL_COUNT} calls, hitting MAX_CALLS_PER_SESSION={max_calls}. "
-            f"Raise the limit in .env if this is intentional."
-        )
-
-    _enforce_rate_limit()
+    guard.check_budget()
+    guard.enforce_rate_limit()
 
     result = _execute_api_call_with_retries(prompt)
 
-    _SESSION_CALL_COUNT += 1
+    guard.session_call_count += 1
+    if session_guard is None:
+        _SESSION_CALL_COUNT = guard.session_call_count
+
     if cache_enabled:
-        _PROMPT_CACHE[prompt] = result
+        guard.prompt_cache[prompt] = result
 
     return result
