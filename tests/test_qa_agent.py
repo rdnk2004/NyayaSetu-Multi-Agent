@@ -20,6 +20,7 @@ if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
 from qa_agent import answer_question, _build_query_from_facts
+from models import QAResult
 
 
 def test_normal_case_returns_answer_with_citations():
@@ -156,7 +157,7 @@ def test_malformed_llm_json_handled_without_crashing():
              patch("qa_agent.call_llm_structured", return_value=bad_output):
             result = answer_question(case_brief)
 
-        assert isinstance(result, dict), "Result must always be a dict"
+        assert isinstance(result, (dict, QAResult)), "Result must always be a dict or QAResult"
         assert result["status"] == "unclear", f"Malformed output should result in status 'unclear', got {result['status']}"
         assert result["cited_sections"] == []
         assert isinstance(result["answer"], str)

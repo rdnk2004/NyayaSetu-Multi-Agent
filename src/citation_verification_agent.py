@@ -14,6 +14,7 @@ import logging
 from typing import Any
 
 from llm_client import call_llm_structured, safe_parse_llm_json
+from models import CitationVerificationResult, CitationVerificationDetail, QAResult
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,10 @@ def _check_section_support(section: str, section_text: str, answer: str) -> tupl
     return is_supported, reason
 
 
-def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str, Any]]) -> dict[str, Any]:
+def verify_citations(
+    qa_result: QAResult | dict[str, Any],
+    retrieved_chunks: list[dict[str, Any]],
+) -> CitationVerificationResult:
     """
     Verify all citations in the QA Agent's result against retrieved chunks.
 
@@ -87,7 +91,7 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
         retrieved_chunks: List of chunk dicts from retrieve() (each with 'metadata' and 'text')
 
     Returns:
-        {
+        CitationVerificationResult: {
             "verified": bool,
             "verified_sections": list[str],
             "rejected_sections": list[str],
@@ -99,17 +103,17 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
     cited_sections = qa_result.get("cited_sections", [])
 
     if not cited_sections:
-        return {
-            "verified": True,
-            "verified_sections": [],
-            "rejected_sections": [],
-            "details": {},
-            "final_answer": answer,
-        }
+        return CitationVerificationResult(
+            verified=True,
+            verified_sections=[],
+            rejected_sections=[],
+            details={},
+            final_answer=answer,
+        )
 
     verified_sections: list[str] = []
     rejected_sections: list[str] = []
-    details: dict[str, dict[str, Any]] = {}
+    details: dict[str, Any] = {}
 
     for section in cited_sections:
         sec_str = str(section).strip()
@@ -128,10 +132,10 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
                 sec_str,
             )
             rejected_sections.append(sec_str)
-            details[sec_str] = {
-                "supported": False,
-                "reason": "Section not found in retrieved chunks.",
-            }
+            details[sec_str] = CitationVerificationDetail(
+                supported=False,
+                reason="Section not found in retrieved chunks.",
+            )
             continue
 
         # Combine text of all matching chunks for this section
@@ -145,19 +149,19 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
                 sec_str,
             )
             rejected_sections.append(sec_str)
-            details[sec_str] = {
-                "supported": False,
-                "reason": "Retrieved chunk text is empty for section.",
-            }
+            details[sec_str] = CitationVerificationDetail(
+                supported=False,
+                reason="Retrieved chunk text is empty for section.",
+            )
             continue
 
         # 2. LLM semantic support check
         is_supported, reason = _check_section_support(sec_str, combined_text, answer)
 
-        details[sec_str] = {
-            "supported": is_supported,
-            "reason": reason,
-        }
+        details[sec_str] = CitationVerificationDetail(
+            supported=is_supported,
+            reason=reason,
+        )
 
         if is_supported:
             verified_sections.append(sec_str)
@@ -166,11 +170,11 @@ def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str,
 
     all_verified = len(rejected_sections) == 0 and len(verified_sections) == len(cited_sections)
 
-    return {
-        "verified": all_verified,
-        "verified_sections": verified_sections,
-        "rejected_sections": rejected_sections,
-        "details": details,
-        "final_answer": answer if all_verified else UNVERIFIED_FALLBACK_ANSWER,
-    }
+    return CitationVerificationResult(
+        verified=all_verified,
+        verified_sections=verified_sections,
+        rejected_sections=rejected_sections,
+        details=details,
+        final_answer=answer if all_verified else UNVERIFIED_FALLBACK_ANSWER,
+    )
 

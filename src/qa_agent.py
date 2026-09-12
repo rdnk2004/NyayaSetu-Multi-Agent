@@ -12,6 +12,7 @@ Consumes a completed case brief from the Intake Agent:
 """
 
 from llm_client import call_llm_structured, safe_parse_llm_json
+from models import CaseBrief, QAResult
 from retrieve import retrieve
 
 
@@ -114,52 +115,52 @@ def _format_chunks_for_prompt(chunks: list[dict]) -> str:
     return "\n\n".join(formatted_chunks)
 
 
-def answer_question(case_brief: dict) -> dict:
+def answer_question(case_brief: CaseBrief | dict) -> QAResult:
     """
     Answers a citizen's legal inquiry using retrieved legal chunks and structured LLM generation.
 
     Args:
-        case_brief: dict shaped like IntakeSession.to_case_brief() output
+        case_brief: CaseBrief or dict shaped like IntakeSession.to_case_brief() output
                     ({"domain": str, "facts": dict, "ready": bool})
 
     Returns:
-        dict: {
+        QAResult: {
             "answer": str,
             "cited_sections": list[str],
             "status": "answered" | "unclear",
             "retrieved_chunks": list[dict]
         }
     """
-    if not isinstance(case_brief, dict):
-        return {
-            "answer": "",
-            "cited_sections": [],
-            "status": "unclear",
-            "retrieved_chunks": [],
-        }
+    if not isinstance(case_brief, (CaseBrief, dict)):
+        return QAResult(
+            answer="",
+            cited_sections=[],
+            status="unclear",
+            retrieved_chunks=[],
+        )
 
-    domain = case_brief.get("domain", "Unknown")
-    facts = case_brief.get("facts", {})
+    domain = case_brief.get("domain", "Unknown") if isinstance(case_brief, (dict, CaseBrief)) else "Unknown"
+    facts = case_brief.get("facts", {}) if isinstance(case_brief, (dict, CaseBrief)) else {}
     if not isinstance(facts, dict):
         facts = {}
 
     query = _build_query_from_facts(facts)
     if not query:
-        return {
-            "answer": "",
-            "cited_sections": [],
-            "status": "unclear",
-            "retrieved_chunks": [],
-        }
+        return QAResult(
+            answer="",
+            cited_sections=[],
+            status="unclear",
+            retrieved_chunks=[],
+        )
 
     chunks = retrieve(query, top_k=5)
     if not chunks:
-        return {
-            "answer": "",
-            "cited_sections": [],
-            "status": "unclear",
-            "retrieved_chunks": [],
-        }
+        return QAResult(
+            answer="",
+            cited_sections=[],
+            status="unclear",
+            retrieved_chunks=[],
+        )
 
     prompt = QA_PROMPT_TEMPLATE.format(
         domain=domain,
@@ -194,9 +195,9 @@ def answer_question(case_brief: dict) -> dict:
         for s in cited_sections
     ]
 
-    return {
-        "answer": answer,
-        "cited_sections": cited_sections,
-        "status": status,
-        "retrieved_chunks": chunks,
-    }
+    return QAResult(
+        answer=answer,
+        cited_sections=cited_sections,
+        status=status,
+        retrieved_chunks=chunks,
+    )

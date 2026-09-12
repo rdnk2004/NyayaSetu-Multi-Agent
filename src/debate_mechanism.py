@@ -20,6 +20,7 @@ import logging
 from typing import Any
 
 from llm_client import call_llm_structured, safe_parse_llm_json
+from models import CaseBrief, DebateResult
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,7 @@ def _clean_citations(raw_citations: Any) -> list[str]:
     return cleaned
 
 
-def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
+def run_debate(case_brief: CaseBrief | dict, retrieved_chunks: list[dict]) -> DebateResult:
     """
     IMPORTANT: retrieved_chunks should be retrieved with a HIGHER top_k
     than QA Agent uses (e.g. top_k=8, not 5). The judge needs visibility
@@ -192,12 +193,12 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
     adjudicated by an impartial Judge, grounded strictly in retrieved statutory chunks.
 
     Args:
-        case_brief: dict shaped like IntakeSession.to_case_brief()
+        case_brief: CaseBrief or dict shaped like IntakeSession.to_case_brief()
                     ({"domain": str, "facts": dict, "ready": bool})
         retrieved_chunks: list of chunk dicts from retrieve() (each with 'metadata' and 'text')
 
     Returns:
-        dict: {
+        DebateResult: {
             "plaintiff_argument": str,
             "plaintiff_cited_sections": list[str],
             "defense_argument": str,
@@ -207,27 +208,30 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
             "clearly_supported_side": str | None
         }
     """
-    safe_default = {
-        "plaintiff_argument": "",
-        "plaintiff_cited_sections": [],
-        "defense_argument": "",
-        "defense_cited_sections": [],
-        "is_grey_zone": False,
-        "judge_summary": "No relevant statutory provisions were retrieved to conduct a legal debate.",
-        "clearly_supported_side": None,
-    }
-
     if not retrieved_chunks or not isinstance(retrieved_chunks, list):
-        return safe_default
+        return DebateResult(
+            plaintiff_argument="",
+            plaintiff_cited_sections=[],
+            defense_argument="",
+            defense_cited_sections=[],
+            is_grey_zone=False,
+            judge_summary="No relevant statutory provisions were retrieved to conduct a legal debate.",
+            clearly_supported_side=None,
+        )
 
-    if not isinstance(case_brief, dict):
-        return {
-            **safe_default,
-            "judge_summary": "Invalid case brief provided; cannot conduct a legal debate.",
-        }
+    if not isinstance(case_brief, (CaseBrief, dict)):
+        return DebateResult(
+            plaintiff_argument="",
+            plaintiff_cited_sections=[],
+            defense_argument="",
+            defense_cited_sections=[],
+            is_grey_zone=False,
+            judge_summary="Invalid case brief provided; cannot conduct a legal debate.",
+            clearly_supported_side=None,
+        )
 
-    domain = str(case_brief.get("domain", "Unknown") or "Unknown")
-    facts = case_brief.get("facts", {})
+    domain = str(case_brief.get("domain", "Unknown") or "Unknown") if isinstance(case_brief, (dict, CaseBrief)) else "Unknown"
+    facts = case_brief.get("facts", {}) if isinstance(case_brief, (dict, CaseBrief)) else {}
     if not isinstance(facts, dict):
         facts = {}
 
@@ -243,15 +247,15 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
     raw_plaintiff = call_llm_structured(plaintiff_prompt)
     plaintiff_data = safe_parse_llm_json(raw_plaintiff, {})
     if not plaintiff_data:
-        return {
-            "plaintiff_argument": "",
-            "plaintiff_cited_sections": [],
-            "defense_argument": "",
-            "defense_cited_sections": [],
-            "is_grey_zone": False,
-            "judge_summary": "Unable to complete legal debate due to an invalid plaintiff argument response.",
-            "clearly_supported_side": None,
-        }
+        return DebateResult(
+            plaintiff_argument="",
+            plaintiff_cited_sections=[],
+            defense_argument="",
+            defense_cited_sections=[],
+            is_grey_zone=False,
+            judge_summary="Unable to complete legal debate due to an invalid plaintiff argument response.",
+            clearly_supported_side=None,
+        )
 
     plaintiff_argument = str(plaintiff_data.get("argument", "") or "").strip()
     plaintiff_cited_sections = _clean_citations(plaintiff_data.get("cited_sections", []))
@@ -265,15 +269,15 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
     raw_defense = call_llm_structured(defense_prompt)
     defense_data = safe_parse_llm_json(raw_defense, {})
     if not defense_data:
-        return {
-            "plaintiff_argument": plaintiff_argument,
-            "plaintiff_cited_sections": plaintiff_cited_sections,
-            "defense_argument": "",
-            "defense_cited_sections": [],
-            "is_grey_zone": False,
-            "judge_summary": "Unable to complete legal debate due to an invalid defense argument response.",
-            "clearly_supported_side": None,
-        }
+        return DebateResult(
+            plaintiff_argument=plaintiff_argument,
+            plaintiff_cited_sections=plaintiff_cited_sections,
+            defense_argument="",
+            defense_cited_sections=[],
+            is_grey_zone=False,
+            judge_summary="Unable to complete legal debate due to an invalid defense argument response.",
+            clearly_supported_side=None,
+        )
 
     defense_argument = str(defense_data.get("argument", "") or "").strip()
     defense_cited_sections = _clean_citations(defense_data.get("cited_sections", []))
@@ -302,15 +306,15 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
     raw_judge = call_llm_structured(judge_prompt)
     judge_data = safe_parse_llm_json(raw_judge, {})
     if not judge_data:
-        return {
-            "plaintiff_argument": plaintiff_argument,
-            "plaintiff_cited_sections": plaintiff_cited_sections,
-            "defense_argument": defense_argument,
-            "defense_cited_sections": defense_cited_sections,
-            "is_grey_zone": False,
-            "judge_summary": "Unable to complete legal debate adjudication due to an invalid judge response.",
-            "clearly_supported_side": None,
-        }
+        return DebateResult(
+            plaintiff_argument=plaintiff_argument,
+            plaintiff_cited_sections=plaintiff_cited_sections,
+            defense_argument=defense_argument,
+            defense_cited_sections=defense_cited_sections,
+            is_grey_zone=False,
+            judge_summary="Unable to complete legal debate adjudication due to an invalid judge response.",
+            clearly_supported_side=None,
+        )
 
     is_grey_zone = bool(judge_data.get("is_grey_zone", False))
     judge_summary = str(judge_data.get("judge_summary", "") or "").strip()
@@ -325,12 +329,12 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
             if side_str in ("plaintiff", "defense"):
                 clearly_supported_side = side_str
 
-    return {
-        "plaintiff_argument": plaintiff_argument,
-        "plaintiff_cited_sections": plaintiff_cited_sections,
-        "defense_argument": defense_argument,
-        "defense_cited_sections": defense_cited_sections,
-        "is_grey_zone": is_grey_zone,
-        "judge_summary": judge_summary,
-        "clearly_supported_side": clearly_supported_side,
-    }
+    return DebateResult(
+        plaintiff_argument=plaintiff_argument,
+        plaintiff_cited_sections=plaintiff_cited_sections,
+        defense_argument=defense_argument,
+        defense_cited_sections=defense_cited_sections,
+        is_grey_zone=is_grey_zone,
+        judge_summary=judge_summary,
+        clearly_supported_side=clearly_supported_side,
+    )
