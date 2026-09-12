@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Any
 
-from llm_client import call_llm_structured
+from llm_client import call_llm_structured, safe_parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -59,28 +59,23 @@ def _check_section_support(section: str, section_text: str, answer: str) -> tupl
         answer=answer,
     )
     raw_response = call_llm_structured(prompt)
-    try:
-        parsed = json.loads(raw_response)
-        is_supported = bool(parsed.get("is_supported", False))
-        reason = str(parsed.get("reason", "")).strip()
+    fallback = {
+        "is_supported": False,
+        "reason": "Failed to parse LLM verification response",
+    }
+    parsed = safe_parse_llm_json(raw_response, fallback)
+    is_supported = bool(parsed.get("is_supported", False))
+    reason = str(parsed.get("reason", "")).strip()
 
-        # Log unsupported sections with the LLM's explanation for diagnosability/auditability.
-        if not is_supported:
-            logger.warning(
-                "Citation verification: section '%s' not supported by text. Reason: %s",
-                section,
-                reason or "<no reason provided by model>",
-            )
-
-        return is_supported, reason
-    except (json.JSONDecodeError, Exception) as e:
+    # Log unsupported sections with the LLM's explanation for diagnosability/auditability.
+    if not is_supported:
         logger.warning(
-            "Citation verification: failed to parse LLM response for section '%s'. Error: %s",
+            "Citation verification: section '%s' not supported by text. Reason: %s",
             section,
-            e,
+            reason or "<no reason provided by model>",
         )
-        # Safe fallback: fail safe if LLM output cannot be cleanly parsed
-        return False, f"Failed to parse LLM verification response: {e}"
+
+    return is_supported, reason
 
 
 def verify_citations(qa_result: dict[str, Any], retrieved_chunks: list[dict[str, Any]]) -> dict[str, Any]:

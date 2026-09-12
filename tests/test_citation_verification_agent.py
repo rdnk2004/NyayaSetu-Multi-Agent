@@ -17,6 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import citation_verification_agent
+import llm_client
 from citation_verification_agent import (
     verify_citations,
     UNVERIFIED_FALLBACK_ANSWER,
@@ -207,12 +208,15 @@ def test_logging_on_unsupported_and_parse_error():
         assert mock_warn.called
         assert "section '%s' not supported by text" in mock_warn.call_args[0][0]
 
-    # Test parse error logging
+    # Test parse error logging via shared helper in llm_client
     with patch("citation_verification_agent.call_llm_structured", return_value="{broken json"), \
-         patch("citation_verification_agent.logger.warning") as mock_warn:
+         patch("llm_client.logger.warning") as mock_llm_warn, \
+         patch("citation_verification_agent.logger.warning") as mock_agent_warn:
         verify_citations(qa_result, retrieved_chunks)
-        assert mock_warn.called
-        assert "failed to parse LLM response" in mock_warn.call_args[0][0]
+        assert mock_llm_warn.called
+        assert "failed to parse JSON" in mock_llm_warn.call_args[0][0]
+        assert mock_agent_warn.called
+        assert "not supported by text" in mock_agent_warn.call_args[0][0]
 
     print("  Test 6 passed: Warning logging on unsupported citation and parse error verified.")
 

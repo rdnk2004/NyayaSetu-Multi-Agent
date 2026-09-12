@@ -110,9 +110,48 @@ def test_independent_session_guards_budget_and_cache():
         print("  Independent session guards test passed: Budgets and caches are isolated.")
 
 
+def test_safe_parse_llm_json():
+    """Verify safe_parse_llm_json handles valid, fenced, and corrupt payloads fail-safe."""
+    from llm_client import safe_parse_llm_json
+
+    fallback = {"status": "fallback", "answer": ""}
+
+    # 1. Valid JSON dict
+    valid_res = safe_parse_llm_json('{"key": "value"}', fallback)
+    assert valid_res == {"key": "value"}
+
+    # 2. Markdown fenced JSON dict
+    fenced_res = safe_parse_llm_json('```json\n{"key": "value"}\n```', fallback)
+    assert fenced_res == {"key": "value"}
+
+    # 3. Corrupt syntax returns fallback and logs warning
+    with patch("llm_client.logger.warning") as mock_warn:
+        corrupt_res = safe_parse_llm_json("{malformed json", fallback)
+        assert corrupt_res == fallback
+        assert mock_warn.called
+        assert "failed to parse JSON" in mock_warn.call_args[0][0]
+
+    # 4. Parsed JSON is not a dict (e.g. a list or string)
+    with patch("llm_client.logger.warning") as mock_warn:
+        list_res = safe_parse_llm_json('[1, 2, 3]', fallback)
+        assert list_res == fallback
+        assert mock_warn.called
+        assert "not a dict" in mock_warn.call_args[0][0]
+
+    # 5. Non-string input
+    with patch("llm_client.logger.warning") as mock_warn:
+        none_res = safe_parse_llm_json(None, fallback)
+        assert none_res == fallback
+        assert mock_warn.called
+        assert "expected string response" in mock_warn.call_args[0][0]
+
+    print("  safe_parse_llm_json tests passed: valid, fenced, corrupt, and non-dict inputs handled properly.")
+
+
 if __name__ == "__main__":
     print("\nRunning LLM Client Guardrail Tests:")
     test_prompt_caching()
     test_session_limit_budget_guard()
     test_independent_session_guards_budget_and_cache()
+    test_safe_parse_llm_json()
     print("\nAll guardrail tests passed successfully!")

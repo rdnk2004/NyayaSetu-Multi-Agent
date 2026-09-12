@@ -15,8 +15,7 @@ Consumes a completed case brief from the Intake Agent:
 import json
 from pathlib import Path
 
-# pyrefly: ignore [missing-import]
-from llm_client import call_llm_structured
+from llm_client import call_llm_structured, safe_parse_llm_json
 # pyrefly: ignore [missing-import]
 from retrieve_case_law import retrieve_case_law
 import logging
@@ -148,16 +147,10 @@ def find_landmark_cases(case_brief: dict) -> dict:
             reasoning_text=reasoning_text,
         )
 
-        try:
-            raw_response = call_llm_structured(prompt)
-            parsed = json.loads(raw_response)
-            if isinstance(parsed, dict) and "relevance_explanation" in parsed:
-                candidate_exp = str(parsed["relevance_explanation"]).strip()
-                if candidate_exp:
-                    explanation = candidate_exp
-        except Exception as e:
-            logger.warning(f"Landmark case explanation generation failed for '{case_title}': {e}")
-            explanation = fallback_explanation
+        raw_response = call_llm_structured(prompt)
+        parsed = safe_parse_llm_json(raw_response, {"relevance_explanation": fallback_explanation})
+        candidate_exp = str(parsed.get("relevance_explanation", "") or "").strip()
+        explanation = candidate_exp if candidate_exp else fallback_explanation
 
         cases_output.append({
             "case_title": case_title,
