@@ -13,6 +13,13 @@ All models inherit from NyayaSetuModel to provide dual interface compatibility:
 strongly-typed attribute access (.status, .answer) AND backward-compatible dict
 subscripting (model["status"], model.get("answer")) without requiring changes to
 existing callers or tests that expect dict behavior.
+
+NOTE ON ARCHITECTURE & MIGRATION SCAFFOLDING:
+The dictionary emulation (__getitem__, get, __contains__, keys, etc.) in
+NyayaSetuModel is intentional transitional scaffolding to allow safe, zero-breakage
+migration. New code should exclusively use typed attribute access (.status, .answer).
+In a planned stabilization pass, existing callers will be transitioned to attribute
+access and the dict-emulation methods will be deprecated and removed.
 """
 
 from typing import Any
@@ -22,7 +29,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class NyayaSetuModel(BaseModel):
     """
     Base model providing dict subscripting and dictionary method compatibility
-    to preserve existing caller semantics seamlessly.
+    as transitional scaffolding during the dict -> Pydantic migration.
+
+    Preference for new code: use typed attribute access (e.g., `model.status`).
     """
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
