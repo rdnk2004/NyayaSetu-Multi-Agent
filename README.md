@@ -1,5 +1,7 @@
 # NyayaSetu — Multi-Agent AI for Indian Law
 
+[![Tests](https://github.com/rdnk2004/NyayaSetu-Multi-Agent/actions/workflows/test.yml/badge.svg)](https://github.com/rdnk2004/NyayaSetu-Multi-Agent/actions/workflows/test.yml)
+
 A multi-agent AI system that helps citizens understand their legal
 situation in plain language, without needing a lawyer to explain the
 basics — while still directing them to a lawyer when a situation is
