@@ -18,10 +18,9 @@ import config
 def test_default_config_values():
     assert config.DEFAULT_GEMINI_MODEL == "gemini-3.1-flash-lite"
     assert config.DEFAULT_API_TIMEOUT_SECONDS == 15.0
-    assert config.DEFAULT_MAX_CALLS_PER_MINUTE == 15
+    assert config.DEFAULT_MAX_CALLS_PER_MINUTE == 30
     assert config.DEFAULT_MAX_CALLS_PER_SESSION == 200
     assert config.DEFAULT_ENABLE_PROMPT_CACHE is True
-    assert config.DEFAULT_MAX_OUTPUT_TOKENS == 512
     assert config.DEFAULT_EMBEDDING_MODEL == "multi-qa-mpnet-base-dot-v1"
     assert config.DEFAULT_STATUTE_COLLECTION_NAME == "legal_chunks"
     assert config.DEFAULT_CASE_LAW_COLLECTION_NAME == "case_law"

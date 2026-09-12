@@ -22,10 +22,9 @@ load_dotenv()
 # --- Sensible Defaults ---
 DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
 DEFAULT_API_TIMEOUT_SECONDS = 15.0
-DEFAULT_MAX_CALLS_PER_MINUTE = 15
+DEFAULT_MAX_CALLS_PER_MINUTE = 30
 DEFAULT_MAX_CALLS_PER_SESSION = 200
 DEFAULT_ENABLE_PROMPT_CACHE = True
-DEFAULT_MAX_OUTPUT_TOKENS = 512
 
 DEFAULT_EMBEDDING_MODEL = "multi-qa-mpnet-base-dot-v1"
 DEFAULT_CHROMA_DB_PATH = PROJECT_ROOT / "data" / "chroma_db"
@@ -68,13 +67,6 @@ def get_max_calls_per_session() -> int:
 
 def get_enable_prompt_cache() -> bool:
     return os.environ.get("ENABLE_PROMPT_CACHE", str(DEFAULT_ENABLE_PROMPT_CACHE)).strip().lower() == "true"
-
-
-def get_max_output_tokens() -> int:
-    try:
-        return int(os.environ.get("MAX_OUTPUT_TOKENS", str(DEFAULT_MAX_OUTPUT_TOKENS)))
-    except (ValueError, TypeError):
-        return DEFAULT_MAX_OUTPUT_TOKENS
 
 
 def get_embedding_model() -> str:
@@ -144,8 +136,6 @@ def __getattr__(name: str):
         return get_max_calls_per_session()
     if name == "ENABLE_PROMPT_CACHE":
         return get_enable_prompt_cache()
-    if name == "MAX_OUTPUT_TOKENS":
-        return get_max_output_tokens()
     if name == "EMBEDDING_MODEL":
         return get_embedding_model()
     if name == "CHROMA_DB_PATH":
