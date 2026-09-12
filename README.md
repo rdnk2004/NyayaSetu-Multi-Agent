@@ -281,7 +281,23 @@ PYTHONPATH=src python -m pytest tests/ -v
 python scripts/validate_real_llm.py
 python scripts/validate_orchestrator_real.py
 python scripts/validate_landmark_case_real.py
+python scripts/validate_debate_real.py
+python scripts/run_evaluation.py
 ```
+
+---
+
+## Evaluation Results
+
+Benchmark evaluation on 20 labeled scenarios under the Consumer Protection domain (14 clear-cut cases, 6 ambiguous / grey-zone disputes) running live against the real Gemini API (`gemini-3.1-flash-lite`, 121 API calls consumed across 20 end-to-end sessions):
+
+| Metric | Result | Description |
+|---|---|---|
+| **Citation Grounding & Match Rate** | **50.0%** (10/20) | % of cases where `verified=True` and citations match ground-truth statutory sections |
+| **Citation Rejection Rate (Hallucination Proxy)** | **15.2%** (7/46) | % of generated citations flagged and rejected by the Citation Verification Agent |
+| **Grey-Zone Detection Accuracy** | **66.7%** (4/6) | % of ambiguous disputes correctly classified as `is_grey_zone=True` by the Debate Mechanism |
+
+*Detailed per-case outputs are saved to `data/eval/results_<timestamp>.json` for audit and inspection.*
 
 ---
 

@@ -1,0 +1,302 @@
+[
+  {
+    "id": "case_01",
+    "citizen_message": "I bought a Samsung double-door refrigerator last week for Rs 38,000 from Vijay Sales. Within 3 days the cooling stopped completely and all food spoiled. The company technician visited and confirmed a factory compressor defect in his report, but the store refuses to give a refund or replacement and says only repair is possible. Can I legally demand a replacement or full refund?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(10)", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Samsung double-door refrigerator",
+      "what_went_wrong": "Compressor stopped cooling within 3 days, technician confirmed factory defect, store refuses refund or replacement",
+      "when_it_happened": "Last week",
+      "amount_paid": "Rs 38,000",
+      "seller_or_provider": "Vijay Sales",
+      "resolution_attempted": "Visited store with technician defect report requesting replacement or refund"
+    }
+  },
+  {
+    "id": "case_02",
+    "citizen_message": "My IndiGo flight from Delhi to Mumbai was abruptly cancelled 2 hours before departure without any weather or technical justification. The airline did not provide alternate travel, food, or hotel, and has refused to refund my Rs 9,500 ticket. Is this considered deficiency in service under consumer law?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(11)", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Airline flight ticket Delhi to Mumbai",
+      "what_went_wrong": "Flight cancelled 2 hours prior without reason or alternate flight or hotel, ticket refund refused",
+      "when_it_happened": "2 weeks ago",
+      "amount_paid": "Rs 9,500",
+      "seller_or_provider": "IndiGo Airlines",
+      "resolution_attempted": "Filed complaint at airport counter and sent email to customer relations"
+    }
+  },
+  {
+    "id": "case_03",
+    "citizen_message": "An herbal cosmetics company runs major television advertisements claiming their oil is clinically proven to regrow 100% hair on bald spots in 14 days or 10x money back. I purchased it for Rs 3,500. After testing the bottle at a government accredited lab, it was found to contain ordinary mineral oil with zero herbal active ingredients. What action can be taken against such false advertisements?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(28)", "Section 21", "Section 89"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Herbal hair regrowth oil",
+      "what_went_wrong": "Misleading advertisement claiming guaranteed 14-day regrowth; lab report proved ordinary mineral oil without active ingredients",
+      "when_it_happened": "Last month",
+      "amount_paid": "Rs 3,500",
+      "seller_or_provider": "KeshVeda Wellness Pvt Ltd",
+      "resolution_attempted": "Contacted company helpline claiming money-back guarantee; calls disconnected"
+    }
+  },
+  {
+    "id": "case_04",
+    "citizen_message": "At a multiplex cinema in Inox mall, they charged me Rs 100 for a 1-litre packaged drinking water bottle that clearly had an official printed MRP of Rs 20. The manager said cinema prices are higher by policy. Is charging above the printed MRP an unfair trade practice?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(6)", "Section 2(47)", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Packaged mineral water bottle",
+      "what_went_wrong": "Charged price of Rs 100 in excess of printed MRP of Rs 20 adopting unfair trade practice",
+      "when_it_happened": "Yesterday evening",
+      "amount_paid": "Rs 100",
+      "seller_or_provider": "Inox Leisure Multiplex",
+      "resolution_attempted": "Objected at counter, requested bill showing MRP, manager insisted on multiplex surcharge"
+    }
+  },
+  {
+    "id": "case_05",
+    "citizen_message": "I purchased an electric power drill set for Rs 6,200 in cash from a local hardware dealer. When I asked for a printed tax invoice or cash memo, the shopkeeper flatly refused and said cash purchases do not get bills. Does the law mandate issuing a bill?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(6)", "Section 2(47)", "Section 35", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Electric power drill kit",
+      "what_went_wrong": "Seller refused to issue bill, cash memo, or receipt for goods sold as required under law",
+      "when_it_happened": "3 days ago",
+      "amount_paid": "Rs 6,200",
+      "seller_or_provider": "Shree Ram Hardware Store",
+      "resolution_attempted": "Insisted on bill for warranty registration, seller threatened to cancel sale without refund"
+    }
+  },
+  {
+    "id": "case_06",
+    "citizen_message": "I have a serious dispute regarding a brand new SUV car worth Rs 42 Lakhs where the braking system failed completely on the highway. I want to file a consumer complaint for refund and damages totalling Rs 48 Lakhs. Which consumer court has the pecuniary jurisdiction to hear this?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 34", "Section 83", "Section 84"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "New SUV automobile",
+      "what_went_wrong": "Brake failure defect; seeking to file consumer complaint for Rs 48 Lakhs pecuniary jurisdiction before District Commission",
+      "when_it_happened": "2 months ago",
+      "amount_paid": "Rs 42 Lakhs",
+      "seller_or_provider": "AutoWorld Dealership & Tata Motors",
+      "resolution_attempted": "Sent legal notice to dealer and manufacturer demanding vehicle replacement"
+    }
+  },
+  {
+    "id": "case_07",
+    "citizen_message": "I live and work in Lucknow. While on an official trip to Bengaluru, I purchased high-end office furniture from a local showroom. After delivery to my Lucknow home, several joints were broken. The seller claims I can only sue them in Bengaluru where the shop is located. Can I file a consumer complaint in Lucknow where I reside?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 34", "Section 2(6)", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Ergonomic executive desk and chair",
+      "what_went_wrong": "Delivered with broken joints; dispute regarding territorial jurisdiction to file complaint where complainant resides in Lucknow under Section 34",
+      "when_it_happened": "1 month ago",
+      "amount_paid": "Rs 75,000",
+      "seller_or_provider": "Royal Woods Showroom Bengaluru",
+      "resolution_attempted": "Sent emails requesting replacement in Lucknow; seller cited exclusive Bengaluru court jurisdiction clause"
+    }
+  },
+  {
+    "id": "case_08",
+    "citizen_message": "My 4-month-old laptop battery suddenly exploded while plugged into the original OEM charger, causing third-degree burns to my left arm and scorching my study table. The medical treatment cost Rs 60,000. Can I bring a product liability action against the manufacturer for personal injury and property harm?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 82", "Section 83", "Section 84", "Section 86"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Laptop computer with original battery and charger",
+      "what_went_wrong": "Battery exploded during normal charging causing physical burns and property destruction",
+      "when_it_happened": "3 weeks ago",
+      "amount_paid": "Rs 85,000",
+      "seller_or_provider": "Dell India Pvt Ltd",
+      "resolution_attempted": "Notified customer support with hospital burn reports and photos; offered only replacement battery"
+    }
+  },
+  {
+    "id": "case_09",
+    "citizen_message": "I have filed a consumer complaint regarding an air conditioner that was not installed properly. I want to avoid protracted court hearings and legal expenses. Does the Consumer Protection Act allow the District Commission to refer our matter to a Consumer Mediation Cell for amicable settlement?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 37", "Section 74", "Section 80"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Split Air Conditioner with installation service",
+      "what_went_wrong": "Improper installation causing gas leakage and wall seepage; citizen desires fast mediation settlement under Section 37",
+      "when_it_happened": "2 months ago",
+      "amount_paid": "Rs 45,000",
+      "seller_or_provider": "CoolCare Appliances Ltd",
+      "resolution_attempted": "Filed complaint before District Commission; inquiring about mediation reference"
+    }
+  },
+  {
+    "id": "case_10",
+    "citizen_message": "Eight months ago, the District Consumer Commission issued a final order directing a real estate developer to refund my booking advance of Rs 6,50,000 with 9% interest within 30 days. The builder has deliberately ignored the order and made no payment. What punishment or penalties can the Commission impose for non-compliance with its order?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 71", "Section 72"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Residential apartment booking",
+      "what_went_wrong": "Opposite party wilfully failed to comply with final refund order passed by District Commission",
+      "when_it_happened": "Order passed 8 months ago, deadline expired 7 months ago",
+      "amount_paid": "Rs 6,50,000",
+      "seller_or_provider": "Greenfield Promoters Pvt Ltd",
+      "resolution_attempted": "Served certified copy of order to builder; builder refused payment"
+    }
+  },
+  {
+    "id": "case_11",
+    "citizen_message": "During an elective arthroscopic surgery at a private nursing home, the hospital staff administered a mismatched unit of blood that was past its expiry date, triggering acute hemolytic shock and requiring 10 days of ICU management. Can the hospital be held liable for deficiency of service and product service provider liability?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(11)", "Section 85", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Hospital surgical and medical care services",
+      "what_went_wrong": "Gross negligence in administering expired mismatched blood resulting in acute shock and ICU stay",
+      "when_it_happened": "Last month",
+      "amount_paid": "Rs 3,20,000",
+      "seller_or_provider": "CityCare MultiSpeciality Hospital",
+      "resolution_attempted": "Requested medical records and explanation from medical superintendent; met with evasive response"
+    }
+  },
+  {
+    "id": "case_12",
+    "citizen_message": "I ordered an expensive ceramic dinner set on an online shopping portal for Rs 8,000. Upon opening the box in front of the courier, half the plates were shattered. I immediately raised a return request within 12 hours with unboxing video proof. The e-commerce company closed my ticket citing their internal policy that fragile items cannot be returned. Does the law protect me against refusal to refund defective goods?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(47)", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Ceramic luxury dinner set",
+      "what_went_wrong": "Delivered in shattered condition; platform refused return or refund within stipulated statutory window",
+      "when_it_happened": "5 days ago",
+      "amount_paid": "Rs 8,000",
+      "seller_or_provider": "ShopCart Online Marketplace",
+      "resolution_attempted": "Raised return ticket with photos and unboxing video; platform rejected claim"
+    }
+  },
+  {
+    "id": "case_13",
+    "citizen_message": "My debit card was compromised and four unauthorized transactions of Rs 20,000 each took place. I immediately blocked the card via customer care within 15 minutes of the first SMS. Despite my prompt notification, the bank cleared subsequent transactions 4 hours later and refused to reverse the loss, blaming me. Is the bank liable for deficiency in banking service?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(11)", "Section 39"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Banking and debit card payment facility",
+      "what_went_wrong": "Bank failed to halt unauthorized transactions despite instant hotlisting notification, refused charge reversal",
+      "when_it_happened": "2 weeks ago",
+      "amount_paid": "Rs 80,000 stolen",
+      "seller_or_provider": "Horizon Bank Ltd",
+      "resolution_attempted": "Submitted written dispute form and police cyber cell complaint copy to bank branch manager"
+    }
+  },
+  {
+    "id": "case_14",
+    "citizen_message": "The District Consumer Commission dismissed my valid complaint regarding a defective television without considering the official laboratory inspection report. I want to appeal against this final order of the District Commission. To which higher forum should I appeal, and what is the statutory appeal provision?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 41", "Section 47"],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Smart OLED Television",
+      "what_went_wrong": "District Commission passed an erroneous dismissal order overlooking lab evidence; citizen seeks appeal forum under Section 41",
+      "when_it_happened": "District order received 15 days ago",
+      "amount_paid": "Rs 92,000 original TV cost",
+      "seller_or_provider": "Sony Electronics & District Commission Order",
+      "resolution_attempted": "Obtained certified copy of District Commission judgment to prefer statutory appeal"
+    }
+  },
+  {
+    "id": "case_15",
+    "citizen_message": "My commercial RO water purifier boiler exploded in my bakery kitchen, causing Rs 1.5 Lakhs in water damage. The manufacturer refuses product liability compensation, pointing out that two months ago my local plumber replaced an external sediment filter cartridge with an unbranded filter, claiming Section 87 statutory exception for product alteration. However, the forensic engineer report proves the explosion was caused by a defective internal thermostat switch that was 100% untouched OEM factory hardware. Is the manufacturer still liable or does the external filter change completely exempt them?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 84", "Section 87"],
+    "case_type": "ambiguous",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Commercial RO Water Purifier unit",
+      "what_went_wrong": "Thermostat failure caused boiler rupture and property flooding; manufacturer claims third-party cartridge modification exemption",
+      "when_it_happened": "6 weeks ago",
+      "amount_paid": "Rs 1,20,000",
+      "seller_or_provider": "Aquasure Commercial Systems Pvt Ltd",
+      "resolution_attempted": "Sent formal claim with forensic engineering report; manufacturer cited Section 87 modification defense"
+    }
+  },
+  {
+    "id": "case_16",
+    "citizen_message": "I purchased an expensive mirrorless camera for Rs 2,40,000 to earn my living as an independent freelance wedding photographer. I have no employees and work entirely on my own. The camera shutter mechanism broke within 2 months. The camera company has rejected my consumer complaint arguing that using the camera for paid photo shoots is a 'commercial purpose' which excludes me from being a consumer under Section 2(7). Can I claim protection as a consumer under the self-employment livelihood exception?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(7)"],
+    "case_type": "ambiguous",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Professional digital camera and lens",
+      "what_went_wrong": "Shutter failure; company denied warranty and consumer status citing commercial use for paid assignments",
+      "when_it_happened": "Last month",
+      "amount_paid": "Rs 2,40,000",
+      "seller_or_provider": "Nikon India Authorised Dealer",
+      "resolution_attempted": "Submitted tax returns showing solo freelancer status earning livelihood exclusively by personal photography"
+    }
+  },
+  {
+    "id": "case_17",
+    "citizen_message": "I purchased an induction pressure cooker from a seller on a major e-commerce marketplace. The cooker lid blew off while preparing dinner, causing burns. When I tried to trace the manufacturer, the listed company in the invoice was a shell firm that has ceased operations. I am holding the e-commerce product seller liable under Section 86, but the seller contends they merely acted as an intermediary facilitator without physical possession or alteration of the sealed package. Can the seller be held liable under product liability?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 84", "Section 86"],
+    "case_type": "ambiguous",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Induction Pressure Cooker",
+      "what_went_wrong": "Defective lid caused explosion; manufacturer is untraceable shell company, marketplace seller claims intermediary exemption",
+      "when_it_happened": "1 month ago",
+      "amount_paid": "Rs 4,200",
+      "seller_or_provider": "E-Bazaar India Pvt Ltd (Seller & Platform)",
+      "resolution_attempted": "Issued legal notice demanding seller assume product liability since manufacturer is non-existent"
+    }
+  },
+  {
+    "id": "case_18",
+    "citizen_message": "I purchased an electric scooter 2 years and 4 months ago. From the first month, the battery range was only 25 km instead of the promised 100 km. The authorised service center took the scooter in for repair six separate times and kept promising software updates, with the final unsuccessful repair job-card dated only 3 weeks ago before they declared it unfixable. The company now claims my complaint is time-barred under Section 69 because 2 years have passed from the original date of purchase. Does the continuous repair constitute a continuing cause of action?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 69", "Section 2(11)"],
+    "case_type": "ambiguous",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Electric Scooter",
+      "what_went_wrong": "Chronic battery defect; dealer spent 2 years attempting unsuccessful repairs, now claims statutory limitation expired under Section 69",
+      "when_it_happened": "Bought 28 months ago; last repair attempt closed 3 weeks ago",
+      "amount_paid": "Rs 1,35,000",
+      "seller_or_provider": "VoltMobility EV Ltd",
+      "resolution_attempted": "Preserved all six service job cards documenting continuous repair attempts up to last month"
+    }
+  },
+  {
+    "id": "case_19",
+    "citizen_message": "I bought a halogen convection room heater. Last winter, the heater caught fire and partially charred my sofa when placed about 2 feet away. The manufacturer invokes Section 87(2) asserting that the user manual stated a minimum clearance of 3 feet, claiming product misuse. However, there was no warning label or icon whatsoever on the heater unit itself, and the manual was a 60-page generic booklet without highlighted warnings. Can the manufacturer be liable under Section 84 for failure to provide adequate warnings on the product itself?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 84", "Section 87"],
+    "case_type": "ambiguous",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Halogen convection room heater",
+      "what_went_wrong": "Heater fire caused property damage; manufacturer asserts misuse for 2-ft placement, citizen cites lack of on-product warning label",
+      "when_it_happened": "3 months ago",
+      "amount_paid": "Rs 4,800",
+      "seller_or_provider": "WarmHome Appliances Ltd",
+      "resolution_attempted": "Submitted photographs of product demonstrating total absence of warning labels on the appliance housing"
+    }
+  },
+  {
+    "id": "case_20",
+    "citizen_message": "My son enrolled in a 2-year classroom coaching program for medical entrance exams, paying Rs 1,80,000 upfront for the entire two years. After attending for 6 weeks, he fell severely ill with jaundice and was advised complete bed rest for 4 months. We requested a pro-rata refund for the remaining 22 months of unused coaching. The institute refused, brandishing a clause in the application form stating 'Fees once paid are strictly non-refundable under any circumstance'. Is such a unilateral non-refundable clause an unfair contract or unfair trade practice?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": ["Section 2(46)", "Section 2(47)"],
+    "case_type": "ambiguous",
+    "intake_answers": {
+      "what_was_bought_or_hired": "2-year Medical Coaching Course",
+      "what_went_wrong": "Medical illness forced withdrawal after 6 weeks; institute refused pro-rata refund citing non-refundable clause",
+      "when_it_happened": "2 months ago",
+      "amount_paid": "Rs 1,80,000",
+      "seller_or_provider": "Apex Science Academy",
+      "resolution_attempted": "Submitted medical certificates requesting pro-rata refund of tuition fees for unutilized period"
+    }
+  }
+]
