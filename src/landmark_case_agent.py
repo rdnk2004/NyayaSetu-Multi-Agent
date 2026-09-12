@@ -15,6 +15,7 @@ Consumes a completed case brief from the Intake Agent:
 import json
 from pathlib import Path
 
+from config import LANDMARK_CASE_TOP_K
 from llm_client import call_llm_structured, safe_parse_llm_json
 from models import CaseBrief, LandmarkCase, LandmarkCaseResult
 # pyrefly: ignore [missing-import]
@@ -116,7 +117,7 @@ def find_landmark_cases(case_brief: CaseBrief | dict) -> LandmarkCaseResult:
     if not query:
         return LandmarkCaseResult(cases=[], status="no_relevant_cases")
 
-    retrieved_cases = retrieve_case_law(query, top_k=3)
+    retrieved_cases = retrieve_case_law(query, top_k=LANDMARK_CASE_TOP_K)
     if not retrieved_cases:
         return LandmarkCaseResult(cases=[], status="no_relevant_cases")
 

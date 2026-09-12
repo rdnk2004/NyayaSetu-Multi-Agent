@@ -17,6 +17,8 @@ import time
 from pathlib import Path
 from dotenv import load_dotenv
 
+import config
+
 logger = logging.getLogger(__name__)
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -47,7 +49,7 @@ class LLMSessionGuard:
         max_per_minute = (
             self.max_calls_per_minute
             if self.max_calls_per_minute is not None
-            else int(os.environ.get("MAX_CALLS_PER_MINUTE", "30"))
+            else config.MAX_CALLS_PER_MINUTE
         )
         now = time.time()
         self.call_timestamps = [t for t in self.call_timestamps if now - t < 60]
@@ -64,7 +66,7 @@ class LLMSessionGuard:
         max_calls = (
             self.max_calls_per_session
             if self.max_calls_per_session is not None
-            else int(os.environ.get("MAX_CALLS_PER_SESSION", "200"))
+            else config.MAX_CALLS_PER_SESSION
         )
         if self.session_call_count >= max_calls:
             raise RuntimeError(
@@ -152,12 +154,12 @@ def _get_genai_client(api_key: str):
 def _execute_api_call_with_retries(prompt: str, max_retries: int = 3) -> str:
     global _GENAI_CLIENT
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
+    model_name = config.GEMINI_MODEL
     if not model_name:
         raise ValueError(
             "GEMINI_MODEL is empty. Please set GEMINI_MODEL in your '.env' file."
         )
-    timeout = float(os.environ.get("API_TIMEOUT_SECONDS", "15.0"))
+    timeout = config.API_TIMEOUT_SECONDS
 
     last_error = None
     for attempt in range(max_retries + 1):
@@ -233,7 +235,7 @@ def call_llm_structured(
             "and paste your Gemini API key: GEMINI_API_KEY=AIzaSy..."
         )
 
-    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
+    model_name = config.GEMINI_MODEL
     if not model_name:
         raise ValueError(
             "GEMINI_MODEL is empty. Please set GEMINI_MODEL in your '.env' file."
@@ -245,7 +247,7 @@ def call_llm_structured(
     else:
         guard = session_guard
 
-    cache_enabled = os.environ.get("ENABLE_PROMPT_CACHE", "true").lower() == "true"
+    cache_enabled = config.ENABLE_PROMPT_CACHE
     if cache_enabled and prompt in guard.prompt_cache:
         return guard.prompt_cache[prompt]
 

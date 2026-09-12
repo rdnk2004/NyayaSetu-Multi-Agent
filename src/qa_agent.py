@@ -11,6 +11,7 @@ Consumes a completed case brief from the Intake Agent:
     JSON parsing fails (never hallucinate / guess)
 """
 
+from config import QA_RETRIEVAL_TOP_K
 from llm_client import call_llm_structured, safe_parse_llm_json
 from models import CaseBrief, QAResult
 from retrieve import retrieve
@@ -153,7 +154,7 @@ def answer_question(case_brief: CaseBrief | dict) -> QAResult:
             retrieved_chunks=[],
         )
 
-    chunks = retrieve(query, top_k=5)
+    chunks = retrieve(query, top_k=QA_RETRIEVAL_TOP_K)
     if not chunks:
         return QAResult(
             answer="",

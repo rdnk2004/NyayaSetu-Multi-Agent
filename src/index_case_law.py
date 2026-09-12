@@ -16,11 +16,15 @@ import chromadb
 # pyrefly: ignore [missing-import]
 from sentence_transformers import SentenceTransformer
 
-CASE_LAW_DIR = Path(__file__).parent.parent / "data" / "raw" / "case_law"
-DB_PATH = Path(__file__).parent.parent / "data" / "chroma_db"
+from config import (
+    CHROMA_DB_PATH,
+    EMBEDDING_MODEL,
+    CASE_LAW_COLLECTION_NAME,
+)
 
-EMBEDDING_MODEL = "multi-qa-mpnet-base-dot-v1"
-COLLECTION_NAME = "case_law"
+CASE_LAW_DIR = Path(__file__).parent.parent / "data" / "raw" / "case_law"
+DB_PATH = CHROMA_DB_PATH
+COLLECTION_NAME = CASE_LAW_COLLECTION_NAME
 
 
 def parse_case_file(file_path: Path) -> dict:
