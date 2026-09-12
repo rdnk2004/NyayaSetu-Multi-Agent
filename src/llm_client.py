@@ -10,10 +10,14 @@ Includes cost/safety guardrails, controlled via .env:
   - API_TIMEOUT_SECONDS   - per-request timeout
 """
 
+import json
+import logging
 import os
 import time
 from pathlib import Path
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
 if env_path.exists():
@@ -92,6 +96,45 @@ def _strip_markdown_code_fences(text: str) -> str:
             lines = lines[:-1]
         text = "\n".join(lines).strip()
     return text
+
+
+def safe_parse_llm_json(raw_response: str, fallback: dict) -> dict:
+    """
+    Safely parses a raw LLM response into a dictionary:
+    - Strips markdown code fences if present.
+    - Attempts json.loads.
+    - Returns parsed dict if valid, otherwise returns fallback.
+    - Catches any parsing exception and returns fallback.
+    - Logs a warning with a snippet of the raw response on failure.
+    """
+    if not isinstance(raw_response, str):
+        logger.warning(
+            "safe_parse_llm_json: expected string response, got %s. Falling back.",
+            type(raw_response).__name__,
+        )
+        return fallback
+
+    cleaned = _strip_markdown_code_fences(raw_response)
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            return parsed
+        snippet = (cleaned[:100] + "...") if len(cleaned) > 100 else cleaned
+        logger.warning(
+            "safe_parse_llm_json: parsed JSON is not a dict (got %s). Snippet: %s",
+            type(parsed).__name__,
+            snippet,
+        )
+        return fallback
+    except Exception as e:
+        snippet = (cleaned[:100] + "...") if len(cleaned) > 100 else cleaned
+        logger.warning(
+            "safe_parse_llm_json: failed to parse JSON: %s. Snippet: %s",
+            e,
+            snippet,
+        )
+        return fallback
+
 
 _GENAI_CLIENT = None
 _GENAI_CLIENT_KEY = None

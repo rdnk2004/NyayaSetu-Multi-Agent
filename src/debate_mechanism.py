@@ -19,7 +19,7 @@ import json
 import logging
 from typing import Any
 
-from llm_client import call_llm_structured
+from llm_client import call_llm_structured, safe_parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -241,13 +241,8 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
         chunks_text=chunks_text,
     )
     raw_plaintiff = call_llm_structured(plaintiff_prompt)
-
-    try:
-        plaintiff_data = json.loads(raw_plaintiff)
-        if not isinstance(plaintiff_data, dict):
-            raise ValueError("Plaintiff response is not a dict")
-    except Exception as e:
-        logger.warning("Debate mechanism: failed to parse plaintiff response: %s", e)
+    plaintiff_data = safe_parse_llm_json(raw_plaintiff, {})
+    if not plaintiff_data:
         return {
             "plaintiff_argument": "",
             "plaintiff_cited_sections": [],
@@ -268,13 +263,8 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
         chunks_text=chunks_text,
     )
     raw_defense = call_llm_structured(defense_prompt)
-
-    try:
-        defense_data = json.loads(raw_defense)
-        if not isinstance(defense_data, dict):
-            raise ValueError("Defense response is not a dict")
-    except Exception as e:
-        logger.warning("Debate mechanism: failed to parse defense response: %s", e)
+    defense_data = safe_parse_llm_json(raw_defense, {})
+    if not defense_data:
         return {
             "plaintiff_argument": plaintiff_argument,
             "plaintiff_cited_sections": plaintiff_cited_sections,
@@ -310,13 +300,8 @@ def run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
         defense_citations=defense_citations_str,
     )
     raw_judge = call_llm_structured(judge_prompt)
-
-    try:
-        judge_data = json.loads(raw_judge)
-        if not isinstance(judge_data, dict):
-            raise ValueError("Judge response is not a dict")
-    except Exception as e:
-        logger.warning("Debate mechanism: failed to parse judge response: %s", e)
+    judge_data = safe_parse_llm_json(raw_judge, {})
+    if not judge_data:
         return {
             "plaintiff_argument": plaintiff_argument,
             "plaintiff_cited_sections": plaintiff_cited_sections,

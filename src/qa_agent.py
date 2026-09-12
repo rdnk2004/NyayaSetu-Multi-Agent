@@ -11,8 +11,7 @@ Consumes a completed case brief from the Intake Agent:
     JSON parsing fails (never hallucinate / guess)
 """
 
-import json
-from llm_client import call_llm_structured
+from llm_client import call_llm_structured, safe_parse_llm_json
 from retrieve import retrieve
 
 
@@ -170,24 +169,12 @@ def answer_question(case_brief: dict) -> dict:
 
     raw_response = call_llm_structured(prompt)
 
-    try:
-        parsed = json.loads(raw_response)
-    except (json.JSONDecodeError, TypeError):
-        # Fail safe rather than silently guessing - matches query_understanding.py
-        return {
-            "answer": "",
-            "cited_sections": [],
-            "status": "unclear",
-            "retrieved_chunks": chunks,
-        }
-
-    if not isinstance(parsed, dict):
-        return {
-            "answer": "",
-            "cited_sections": [],
-            "status": "unclear",
-            "retrieved_chunks": chunks,
-        }
+    fallback = {
+        "answer": "",
+        "cited_sections": [],
+        "status": "unclear",
+    }
+    parsed = safe_parse_llm_json(raw_response, fallback)
 
     status = parsed.get("status", "unclear")
     if status not in ("answered", "unclear"):
