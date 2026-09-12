@@ -16,6 +16,7 @@ layer calls next_question() -> shows it to the user -> gets an answer
 
 from domain_checklists import get_missing_required_fields, is_intake_complete
 from llm_client import call_llm_structured
+from models import CaseBrief
 import json
 
 
@@ -93,10 +94,10 @@ class IntakeSession:
         to decide whether to hand off to Retrieval yet)."""
         return is_intake_complete(self.domain, self.known_facts)
 
-    def to_case_brief(self) -> dict:
+    def to_case_brief(self) -> CaseBrief:
         """The structured handoff object the Retrieval Agent consumes."""
-        return {
-            "domain": self.domain,
-            "facts": self.known_facts,
-            "ready": self.is_ready(),
-        }
+        return CaseBrief(
+            domain=self.domain,
+            facts=self.known_facts,
+            ready=self.is_ready(),
+        )

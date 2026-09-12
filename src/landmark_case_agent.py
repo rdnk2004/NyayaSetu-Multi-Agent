@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 
 from llm_client import call_llm_structured, safe_parse_llm_json
+from models import CaseBrief, LandmarkCase, LandmarkCaseResult
 # pyrefly: ignore [missing-import]
 from retrieve_case_law import retrieve_case_law
 import logging
@@ -81,16 +82,16 @@ def _format_facts_for_prompt(facts: dict) -> str:
     return "\n".join(lines) if lines else "No specific facts provided."
 
 
-def find_landmark_cases(case_brief: dict) -> dict:
+def find_landmark_cases(case_brief: CaseBrief | dict) -> LandmarkCaseResult:
     """
     Finds relevant precedent cases and generates grounded relevance explanations.
 
     Args:
-        case_brief: dict shaped like IntakeSession.to_case_brief()
+        case_brief: CaseBrief or dict shaped like IntakeSession.to_case_brief()
                     ({"domain": str, "facts": dict, "ready": bool})
 
     Returns:
-        dict: {
+        LandmarkCaseResult: {
             "cases": [
                 {
                     "case_title": str,
@@ -104,20 +105,20 @@ def find_landmark_cases(case_brief: dict) -> dict:
             "status": "found" | "no_relevant_cases"
         }
     """
-    if not isinstance(case_brief, dict):
-        return {"cases": [], "status": "no_relevant_cases"}
+    if not isinstance(case_brief, (CaseBrief, dict)):
+        return LandmarkCaseResult(cases=[], status="no_relevant_cases")
 
-    facts = case_brief.get("facts", {})
+    facts = case_brief.get("facts", {}) if isinstance(case_brief, (dict, CaseBrief)) else {}
     if not isinstance(facts, dict):
         facts = {}
 
     query = _build_query_from_facts(facts)
     if not query:
-        return {"cases": [], "status": "no_relevant_cases"}
+        return LandmarkCaseResult(cases=[], status="no_relevant_cases")
 
     retrieved_cases = retrieve_case_law(query, top_k=3)
     if not retrieved_cases:
-        return {"cases": [], "status": "no_relevant_cases"}
+        return LandmarkCaseResult(cases=[], status="no_relevant_cases")
 
     facts_text = _format_facts_for_prompt(facts)
     cases_output = []
@@ -152,16 +153,18 @@ def find_landmark_cases(case_brief: dict) -> dict:
         candidate_exp = str(parsed.get("relevance_explanation", "") or "").strip()
         explanation = candidate_exp if candidate_exp else fallback_explanation
 
-        cases_output.append({
-            "case_title": case_title,
-            "court": court,
-            "date": date,
-            "source_url": source_url,
-            "attribution": attribution,
-            "relevance_explanation": explanation,
-        })
+        cases_output.append(
+            LandmarkCase(
+                case_title=case_title,
+                court=court,
+                date=date,
+                source_url=source_url,
+                attribution=attribution,
+                relevance_explanation=explanation,
+            )
+        )
 
-    return {
-        "cases": cases_output,
-        "status": "found",
-    }
+    return LandmarkCaseResult(
+        cases=cases_output,
+        status="found",
+    )

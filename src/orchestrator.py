@@ -21,6 +21,7 @@ from query_understanding import understand_query
 from intake_agent import IntakeSession
 from qa_agent import answer_question as qa_answer_question
 from citation_verification_agent import verify_citations
+from models import OrchestratorStageResult
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class CaseSession:
         self.final_result: dict[str, Any] | None = None
         self._final_check_surfaced: bool = False
 
-    def start(self, first_message: str) -> dict[str, Any]:
+    def start(self, first_message: str) -> OrchestratorStageResult:
         """
         Processes the citizen's initial problem description:
         - Classifies domain and extracts any already-mentioned facts.
@@ -56,13 +57,13 @@ class CaseSession:
         if domain == "unclear":
             self.state = "unclear_domain"
             self.domain = "unclear"
-            return {
-                "stage": "unclear_domain",
-                "message": (
+            return OrchestratorStageResult(
+                stage="unclear_domain",
+                message=(
                     "Could you please provide more details about your situation? "
                     "We currently assist with Consumer Protection and related legal issues."
                 ),
-            }
+            )
 
         self.domain = domain
         self.intake_session = IntakeSession(domain=domain, known_facts=facts)
@@ -70,16 +71,16 @@ class CaseSession:
         next_q = self.intake_session.next_question()
         if next_q is not None:
             self.state = "intake_question"
-            return {
-                "stage": "intake_question",
-                "field_key": next_q["field_key"],
-                "question_text": next_q["question_text"],
-            }
+            return OrchestratorStageResult(
+                stage="intake_question",
+                field_key=next_q["field_key"],
+                question_text=next_q["question_text"],
+            )
 
         # Checklist already full from first message
         return self._finish_intake()
 
-    def answer_question(self, field_key: str, answer_text: str) -> dict[str, Any]:
+    def answer_question(self, field_key: str, answer_text: str) -> OrchestratorStageResult:
         """
         Records the user's answer to a pending intake question and either:
         - returns the next required question, or
@@ -93,22 +94,22 @@ class CaseSession:
         next_q = self.intake_session.next_question()
         if next_q is not None:
             self.state = "intake_question"
-            return {
-                "stage": "intake_question",
-                "field_key": next_q["field_key"],
-                "question_text": next_q["question_text"],
-            }
+            return OrchestratorStageResult(
+                stage="intake_question",
+                field_key=next_q["field_key"],
+                question_text=next_q["question_text"],
+            )
 
         return self._finish_intake()
 
-    def proceed(self) -> dict[str, Any]:
+    def proceed(self) -> OrchestratorStageResult:
         """
         Proceed with the pipeline (e.g. after a final_check_gap has been surfaced,
         to proceed directly to QA without adding more facts).
         """
         return self._finish_intake()
 
-    def _finish_intake(self) -> dict[str, Any]:
+    def _finish_intake(self) -> OrchestratorStageResult:
         """
         Runs final check for gaps once, then hands off to QA Agent and
         Citation Verification Agent.
@@ -122,7 +123,7 @@ class CaseSession:
             gap = self.intake_session.run_final_check()
             if gap:
                 self.state = "final_check_gap"
-                return {"stage": "final_check_gap", "gap": gap}
+                return OrchestratorStageResult(stage="final_check_gap", gap=gap)
 
         case_brief = self.intake_session.to_case_brief()
         qa_result = answer_question(case_brief)
@@ -133,10 +134,10 @@ class CaseSession:
         self.final_result = verification
         self.state = "complete"
 
-        return {
-            "stage": "complete",
-            "verified": verification["verified"],
-            "final_answer": verification["final_answer"],
-            "verified_sections": verification["verified_sections"],
-            "rejected_sections": verification["rejected_sections"],
-        }
+        return OrchestratorStageResult(
+            stage="complete",
+            verified=verification["verified"],
+            final_answer=verification["final_answer"],
+            verified_sections=verification["verified_sections"],
+            rejected_sections=verification["rejected_sections"],
+        )

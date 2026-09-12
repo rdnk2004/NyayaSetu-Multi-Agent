@@ -22,6 +22,7 @@ if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
 from debate_mechanism import run_debate
+from models import DebateResult
 
 
 def test_opposing_arguments_grey_zone():
@@ -220,7 +221,7 @@ def test_malformed_json_fails_safe():
     for bad in malformed_payloads:
         with patch("debate_mechanism.call_llm_structured", side_effect=[bad, valid_defense, valid_judge]):
             res = run_debate(case_brief, mock_chunks)
-        assert isinstance(res, dict)
+        assert isinstance(res, (dict, DebateResult))
         assert res["is_grey_zone"] is False
         assert res["clearly_supported_side"] is None
         assert isinstance(res["judge_summary"], str)
@@ -229,7 +230,7 @@ def test_malformed_json_fails_safe():
     for bad in malformed_payloads:
         with patch("debate_mechanism.call_llm_structured", side_effect=[valid_plaintiff, bad, valid_judge]):
             res = run_debate(case_brief, mock_chunks)
-        assert isinstance(res, dict)
+        assert isinstance(res, (dict, DebateResult))
         assert res["is_grey_zone"] is False
         assert res["clearly_supported_side"] is None
         assert isinstance(res["judge_summary"], str)
@@ -238,7 +239,7 @@ def test_malformed_json_fails_safe():
     for bad in malformed_payloads:
         with patch("debate_mechanism.call_llm_structured", side_effect=[valid_plaintiff, valid_defense, bad]):
             res = run_debate(case_brief, mock_chunks)
-        assert isinstance(res, dict)
+        assert isinstance(res, (dict, DebateResult))
         assert res["is_grey_zone"] is False
         assert res["clearly_supported_side"] is None
         assert isinstance(res["judge_summary"], str)
