@@ -8,14 +8,20 @@ interface and return shape as retrieve.py for consistency across agents.
 
 from pathlib import Path
 
+from config import (
+    CHROMA_DB_PATH,
+    EMBEDDING_MODEL,
+    CASE_LAW_COLLECTION_NAME,
+    LANDMARK_CASE_TOP_K,
+)
+
 # pyrefly: ignore [missing-import]
 import chromadb
 # pyrefly: ignore [missing-import]
 from sentence_transformers import SentenceTransformer
 
-DB_PATH = Path(__file__).parent.parent / "data" / "chroma_db"
-EMBEDDING_MODEL = "multi-qa-mpnet-base-dot-v1"
-COLLECTION_NAME = "case_law"
+DB_PATH = CHROMA_DB_PATH
+COLLECTION_NAME = CASE_LAW_COLLECTION_NAME
 
 _model = None
 _collection = None
@@ -36,7 +42,7 @@ def _get_collection():
     return _collection
 
 
-def retrieve_case_law(query: str, top_k: int = 3) -> list[dict]:
+def retrieve_case_law(query: str, top_k: int = LANDMARK_CASE_TOP_K) -> list[dict]:
     """Return the top_k case law entries most relevant to the query, with metadata."""
     model = _get_model()
     collection = _get_collection()

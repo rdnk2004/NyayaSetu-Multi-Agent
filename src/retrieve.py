@@ -8,14 +8,20 @@ from the vector store. This is the function every later agent
 
 from pathlib import Path
 
+from config import (
+    CHROMA_DB_PATH,
+    EMBEDDING_MODEL,
+    STATUTE_COLLECTION_NAME,
+    QA_RETRIEVAL_TOP_K,
+)
+
 # pyrefly: ignore [missing-import]
 import chromadb
 # pyrefly: ignore [missing-import]
 from sentence_transformers import SentenceTransformer
 
-DB_PATH = Path(__file__).parent.parent / "data" / "chroma_db"
-EMBEDDING_MODEL = "multi-qa-mpnet-base-dot-v1"
-COLLECTION_NAME = "legal_chunks"
+DB_PATH = CHROMA_DB_PATH
+COLLECTION_NAME = STATUTE_COLLECTION_NAME
 
 _model = None
 _collection = None
@@ -36,7 +42,7 @@ def _get_collection():
     return _collection
 
 
-def retrieve(query: str, top_k: int = 5) -> list[dict]:
+def retrieve(query: str, top_k: int = QA_RETRIEVAL_TOP_K) -> list[dict]:
     """Return the top_k chunks most relevant to the query, with metadata."""
     model = _get_model()
     collection = _get_collection()

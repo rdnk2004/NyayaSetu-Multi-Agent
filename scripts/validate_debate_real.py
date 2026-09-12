@@ -23,6 +23,7 @@ from pathlib import Path
 # Ensure src is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from config import DEBATE_RETRIEVAL_TOP_K
 from debate_mechanism import run_debate
 from retrieve import retrieve
 
@@ -53,7 +54,7 @@ def run_debate_validation():
 
     # Focus retrieval on statutory concepts of defect, product liability, and exceptions
     search_query = "product liability defect manufacturer exception alteration misuse deficiency in service"
-    retrieved_chunks = retrieve(search_query, top_k=8)
+    retrieved_chunks = retrieve(search_query, top_k=DEBATE_RETRIEVAL_TOP_K)
 
     print(f"\n[Retrieval Summary]")
     print(f"Total statutory chunks retrieved: {len(retrieved_chunks)}")

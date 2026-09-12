@@ -22,6 +22,7 @@ Expected input file format (see data/raw/consumer_protection_sample.txt):
 import re
 import json
 from pathlib import Path
+from config import CHUNK_MAX_WORDS
 
 
 def parse_sections(raw_text: str) -> list[dict]:
@@ -97,7 +98,7 @@ def split_on_enumeration(text: str) -> list[tuple[str, str]]:
     return pieces
 
 
-def chunk_sections(sections: list[dict], max_words: int = 350) -> list[dict]:
+def chunk_sections(sections: list[dict], max_words: int = CHUNK_MAX_WORDS) -> list[dict]:
     """
     Turn parsed sections into retrieval chunks.
 

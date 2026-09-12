@@ -15,13 +15,15 @@ from pathlib import Path
 import chromadb
 from sentence_transformers import SentenceTransformer
 
+from config import (
+    CHROMA_DB_PATH,
+    EMBEDDING_MODEL,
+    STATUTE_COLLECTION_NAME,
+)
+
 CHUNKS_PATH = Path(__file__).parent.parent / "data" / "processed" / "chunks.json"
-DB_PATH = Path(__file__).parent.parent / "data" / "chroma_db"
-
-
-# Swap this later if retrieval quality is weak on real legal language.
-EMBEDDING_MODEL = "multi-qa-mpnet-base-dot-v1"
-COLLECTION_NAME = "legal_chunks"
+DB_PATH = CHROMA_DB_PATH
+COLLECTION_NAME = STATUTE_COLLECTION_NAME
 
 
 def build_vector_store():

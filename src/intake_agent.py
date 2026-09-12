@@ -14,13 +14,11 @@ layer calls next_question() -> shows it to the user -> gets an answer
 -> calls record_answer() -> repeats.
 """
 
+from config import MAX_QUESTIONS
 from domain_checklists import get_missing_required_fields, is_intake_complete
 from llm_client import call_llm_structured
 from models import CaseBrief
 import json
-
-
-MAX_QUESTIONS = 6  # safety valve - don't interrogate someone forever
 
 FINAL_CHECK_PROMPT_TEMPLATE = """A citizen described a legal situation and answered \
 some follow-up questions. Here is everything gathered so far:
