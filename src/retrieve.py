@@ -14,6 +14,7 @@ from config import (
     STATUTE_COLLECTION_NAME,
     QA_RETRIEVAL_TOP_K,
 )
+from pii_redaction import redact_pii
 
 # pyrefly: ignore [missing-import]
 import chromadb
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
     for q in test_queries:
         results = retrieve(q, top_k=5)
-        print(f"\nQuery: {q}")
+        print(f"\nQuery: {redact_pii(q)}")
         for r in results:
             print(f"  -> Section {r['metadata']['section']} "
                   f"({r['metadata']['title']}), distance={r['distance']:.4f}")

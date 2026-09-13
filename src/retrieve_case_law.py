@@ -14,6 +14,7 @@ from config import (
     CASE_LAW_COLLECTION_NAME,
     LANDMARK_CASE_TOP_K,
 )
+from pii_redaction import redact_pii
 
 # pyrefly: ignore [missing-import]
 import chromadb
@@ -76,7 +77,7 @@ if __name__ == "__main__":
 
     for q in test_queries:
         results = retrieve_case_law(q, top_k=3)
-        print(f"\nQuery: {q}")
+        print(f"\nQuery: {redact_pii(q)}")
         for r in results:
             print(f"  -> {r['metadata']['case_title']} "
                   f"({r['metadata']['court']}, {r['metadata']['date']}), distance={r['distance']:.4f}")

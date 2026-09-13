@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 
 import config
 
+from pii_redaction import redact_pii
+
 logger = logging.getLogger(__name__)
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -125,7 +127,7 @@ def safe_parse_llm_json(raw_response: str, fallback: dict) -> dict:
         logger.warning(
             "safe_parse_llm_json: parsed JSON is not a dict (got %s). Snippet: %s",
             type(parsed).__name__,
-            snippet,
+            redact_pii(snippet),
         )
         return fallback
     except Exception as e:
@@ -133,7 +135,7 @@ def safe_parse_llm_json(raw_response: str, fallback: dict) -> dict:
         logger.warning(
             "safe_parse_llm_json: failed to parse JSON: %s. Snippet: %s",
             e,
-            snippet,
+            redact_pii(snippet),
         )
         return fallback
 

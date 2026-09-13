@@ -36,6 +36,7 @@ from config import DEBATE_RETRIEVAL_TOP_K
 from debate_mechanism import run_debate
 from llm_client import _DEFAULT_SESSION_GUARD
 from orchestrator import CaseSession
+from pii_redaction import redact_pii
 from qa_agent import _build_query_from_facts
 from retrieve import retrieve
 
@@ -160,7 +161,7 @@ def run_evaluation():
         if case_id == "case_03" and session.intake_session:
             brief = session.intake_session.to_case_brief()
             diag_q = _build_query_from_facts(brief.get("facts", {}))
-            print(f"  [DIAGNOSTIC case_03] Constructed Query: \"{diag_q}\"")
+            print(f"  [DIAGNOSTIC case_03] Constructed Query: \"{redact_pii(diag_q)}\"")
             diag_chunks = retrieve(diag_q, top_k=5)
             diag_secs = [
                 f"Sec {ch.get('metadata', {}).get('section')} ({ch.get('metadata', {}).get('title')})"
