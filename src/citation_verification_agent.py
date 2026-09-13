@@ -11,6 +11,7 @@ Validates the output of the QA Agent against the retrieved statutory chunks:
 
 import json
 import logging
+import re
 from typing import Any
 
 from llm_client import call_llm_structured, safe_parse_llm_json
@@ -22,6 +23,52 @@ UNVERIFIED_FALLBACK_ANSWER = (
     "The legal citations in the generated answer could not be verified against the official "
     "statutory provisions. The situation remains unclear and requires manual legal review."
 )
+
+
+def _normalize_section(sec: str) -> str:
+    """Normalize a statutory section string for comparative matching."""
+    s = re.sub(r"(?i)section\s*", "", str(sec or "")).strip()
+    s = re.sub(r"\s+", "", s)
+    return s.lower()
+
+
+def _sections_are_compatible(cited: str, chunk_sec: str) -> bool:
+    """
+    Check if a cited section matches or is compatible with a retrieved chunk's section.
+    Supports:
+      - Exact normalized match (e.g. '35' == '35', '2(11)' == '2(11)')
+      - Sub-clause / parent matches (e.g. cited '39(1)' matches chunk '39',
+        or cited '86(d)' matches chunk '86', or cited '38' matches chunk '38(2)')
+      - Clause prefixes (e.g. cited '2(47)(viii)' matches chunk '2(47)')
+    Guarantees that distinct definition clauses under Section 2 do NOT cross-match
+    (e.g. '2(11)' will never match '2(10)'), and distinct subsections do not cross-match
+    (e.g. '38(2)' will never match '38(7)').
+    """
+    norm_cited = _normalize_section(cited)
+    norm_chunk = _normalize_section(chunk_sec)
+
+    if not norm_cited or not norm_chunk:
+        return False
+
+    if norm_cited == norm_chunk:
+        return True
+
+    base_cited = norm_cited.split("(")[0]
+    base_chunk = norm_chunk.split("(")[0]
+    if base_cited != base_chunk:
+        return False
+
+    # Definitions section (Section 2) has distinct enumerated clauses
+    if base_cited == "2":
+        if "(" not in norm_chunk or "(" not in norm_cited:
+            return True
+        return norm_cited.startswith(norm_chunk) or norm_chunk.startswith(norm_cited)
+
+    # For other substantive sections (e.g. 38, 39, 84, 86):
+    if "(" not in norm_cited or "(" not in norm_chunk:
+        return True
+
+    return norm_cited.startswith(norm_chunk) or norm_chunk.startswith(norm_cited)
 
 CITATION_VERIFICATION_PROMPT_TEMPLATE = """You are a strict legal citation verification auditor for NyayaSetu.
 Your task is to verify whether the legal claim made in the QA Agent's answer is genuinely and factually supported by the statutory text from the cited section.
@@ -103,12 +150,13 @@ def verify_citations(
     cited_sections = qa_result.get("cited_sections", [])
 
     if not cited_sections:
+        logger.warning("Citation verification: answer has no cited sections to verify.")
         return CitationVerificationResult(
-            verified=True,
+            verified=False,
             verified_sections=[],
             rejected_sections=[],
             details={},
-            final_answer=answer,
+            final_answer=answer if qa_result.get("status") == "unclear" else UNVERIFIED_FALLBACK_ANSWER,
         )
 
     verified_sections: list[str] = []
@@ -118,11 +166,11 @@ def verify_citations(
     for section in cited_sections:
         sec_str = str(section).strip()
 
-        # 1. Exact section match in retrieved_chunks
+        # 1. Section match in retrieved_chunks (exact or granularity-compatible)
         matching_chunks = [
             chunk for chunk in retrieved_chunks
-            if str(chunk.get("metadata", {}).get("section", "")).strip() == sec_str
-            or str(chunk.get("section", "")).strip() == sec_str
+            if _sections_are_compatible(sec_str, chunk.get("metadata", {}).get("section", ""))
+            or _sections_are_compatible(sec_str, chunk.get("section", ""))
         ]
 
         if not matching_chunks:
@@ -168,7 +216,11 @@ def verify_citations(
         else:
             rejected_sections.append(sec_str)
 
-    all_verified = len(rejected_sections) == 0 and len(verified_sections) == len(cited_sections)
+    all_verified = (
+        len(rejected_sections) == 0
+        and len(verified_sections) == len(cited_sections)
+        and len(cited_sections) > 0
+    )
 
     return CitationVerificationResult(
         verified=all_verified,

@@ -286,6 +286,86 @@ def test_multiple_citations_supporting_different_subclaims():
     print("  Test 7 passed: Multiple citations supporting separate sub-claims both verified.")
 
 
+def test_empty_citations_not_verified():
+    """Test (8): An answer with NO citations must NOT be marked verified (case_07-class bug)."""
+    # Case A: status is 'unclear' with empty citations
+    qa_unclear = {
+        "answer": "The retrieved provisions do not cover this issue.",
+        "cited_sections": [],
+        "status": "unclear",
+    }
+    result_unclear = verify_citations(qa_unclear, [])
+    assert result_unclear["verified"] is False
+    assert result_unclear["verified_sections"] == []
+    assert result_unclear["rejected_sections"] == []
+    assert result_unclear["final_answer"] == qa_unclear["answer"]
+
+    # Case B: status is 'answered' but LLM provided 0 citations
+    qa_answered = {
+        "answer": "You can file a complaint in your home city.",
+        "cited_sections": [],
+        "status": "answered",
+    }
+    result_answered = verify_citations(qa_answered, [])
+    assert result_answered["verified"] is False
+    assert result_answered["verified_sections"] == []
+    assert result_answered["rejected_sections"] == []
+    assert result_answered["final_answer"] == UNVERIFIED_FALLBACK_ANSWER
+    print("  Test 8 passed: Empty citations correctly marked unverified.")
+
+
+def test_citation_granularity_matching():
+    """Test (9): Sub-clause and prefix citation granularity matches correctly,
+    while non-matching sub-clauses are rejected without false cross-matching."""
+    qa_result = {
+        "answer": "Under Section 39(1), the Commission may order replacement, and Section 86(d) holds seller liable.",
+        "cited_sections": ["Section 39(1)", "86(d)"],
+        "status": "answered",
+    }
+    retrieved_chunks = [
+        {
+            "id": "chunk_0039",
+            "text": "Where the District Commission is satisfied... it shall issue an order directing replacement...",
+            "metadata": {"section": "39"},
+        },
+        {
+            "id": "chunk_0086",
+            "text": "A product seller shall be liable in a product liability action if the manufacturer is not known...",
+            "metadata": {"section": "86"},
+        },
+    ]
+
+    mock_llm_response = json.dumps({
+        "is_supported": True,
+        "reason": "Supported by the statutory provisions."
+    })
+
+    with patch("citation_verification_agent.call_llm_structured", return_value=mock_llm_response):
+        result = verify_citations(qa_result, retrieved_chunks)
+
+    assert result["verified"] is True
+    assert result["verified_sections"] == ["Section 39(1)", "86(d)"]
+    assert result["rejected_sections"] == []
+
+    # Negative test: 2(11) must NOT match chunk 2(10), and 38(7) must NOT match chunk 38(2)
+    qa_mismatched = {
+        "answer": "Claims under 2(11) and 38(7).",
+        "cited_sections": ["2(11)", "38(7)"],
+        "status": "answered",
+    }
+    chunks_mismatched = [
+        {"id": "chunk_1", "text": "Defect text...", "metadata": {"section": "2(10)"}},
+        {"id": "chunk_2", "text": "Procedure text...", "metadata": {"section": "38(2)"}},
+    ]
+    with patch("citation_verification_agent.call_llm_structured") as mock_llm:
+        res_mismatch = verify_citations(qa_mismatched, chunks_mismatched)
+        assert mock_llm.call_count == 0  # neither should match chunks
+
+    assert res_mismatch["verified"] is False
+    assert set(res_mismatch["rejected_sections"]) == {"2(11)", "38(7)"}
+    print("  Test 9 passed: Citation granularity matching and negative discrimination work.")
+
+
 if __name__ == "__main__":
     print("\nRunning Citation Verification Agent Tests:")
     test_all_citations_verified()
@@ -295,4 +375,7 @@ if __name__ == "__main__":
     test_llm_malformed_response_fails_safe()
     test_logging_on_unsupported_and_parse_error()
     test_multiple_citations_supporting_different_subclaims()
+    test_empty_citations_not_verified()
+    test_citation_granularity_matching()
     print("\nAll Citation Verification Agent tests passed successfully!")
+

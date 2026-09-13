@@ -220,6 +220,21 @@ def test_facts_with_explicit_none_does_not_contain_none_in_query():
     print("  Explicit None values test passed: Built query contains no literal 'None'.")
 
 
+def test_build_query_includes_specific_legal_question():
+    """Verify that specific_legal_question is incorporated into the search query."""
+    facts = {
+        "what_was_bought_or_hired": "Office Furniture",
+        "what_went_wrong": "Delivered with broken joints",
+        "specific_legal_question": "Can I file a consumer complaint in Lucknow where I reside under territorial jurisdiction?",
+    }
+    query = _build_query_from_facts(facts)
+    assert "Office Furniture" in query
+    assert "Delivered with broken joints" in query
+    assert "territorial jurisdiction" in query
+    assert "Lucknow" in query
+    print("  Specific legal question test passed: Question is preserved in retrieval query.")
+
+
 if __name__ == "__main__":
     tests = [
         test_normal_case_returns_answer_with_citations,
@@ -227,6 +242,7 @@ if __name__ == "__main__":
         test_malformed_llm_json_handled_without_crashing,
         test_empty_or_invalid_case_brief,
         test_facts_with_explicit_none_does_not_contain_none_in_query,
+        test_build_query_includes_specific_legal_question,
     ]
     print("\nRunning QA Agent Unit Tests:")
     for t in tests:

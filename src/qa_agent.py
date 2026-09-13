@@ -57,16 +57,17 @@ def _build_query_from_facts(facts: dict) -> str:
 
     product = str(facts.get("what_was_bought_or_hired") or "").strip()
     issue = str(facts.get("what_went_wrong") or "").strip()
+    question = str(facts.get("specific_legal_question") or "").strip()
     resolution = str(facts.get("resolution_attempted") or "").strip()
 
     parts = []
-    if product:
+    if product and product.lower() != "none":
         parts.append(product)
-    if issue:
+    if issue and issue.lower() != "none":
         parts.append(issue)
-        # Anchor legal embedding with core statutory concepts
-        parts.append("defect product liability deficiency in service")
-    if resolution:
+    if question and question.lower() != "none":
+        parts.append(question)
+    if resolution and resolution.lower() != "none":
         parts.append(resolution)
 
     if not parts:

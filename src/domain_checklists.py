@@ -49,6 +49,11 @@ CONSUMER_PROTECTION_CHECKLIST = {
                        "provider about this? What happened?",
             "required": False,
         },
+        {
+            "key": "specific_legal_question",
+            "prompt": "What specific legal question, remedy, or outcome are you asking about (e.g., refund, replacement, compensation, jurisdiction, or whether a clause is legal)?",
+            "required": False,
+        },
     ],
 }
 
