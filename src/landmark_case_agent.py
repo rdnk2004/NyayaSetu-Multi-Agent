@@ -18,6 +18,7 @@ from pathlib import Path
 from config import LANDMARK_CASE_TOP_K
 from llm_client import call_llm_structured, safe_parse_llm_json
 from models import CaseBrief, LandmarkCase, LandmarkCaseResult
+from pii_redaction import redact_pii
 # pyrefly: ignore [missing-import]
 from retrieve_case_law import retrieve_case_law
 import logging

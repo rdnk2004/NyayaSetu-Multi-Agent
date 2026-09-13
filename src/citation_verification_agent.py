@@ -16,6 +16,7 @@ from typing import Any
 
 from llm_client import call_llm_structured, safe_parse_llm_json
 from models import CitationVerificationResult, CitationVerificationDetail, QAResult
+from pii_redaction import redact_pii
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +121,7 @@ def _check_section_support(section: str, section_text: str, answer: str) -> tupl
         logger.warning(
             "Citation verification: section '%s' not supported by text. Reason: %s",
             section,
-            reason or "<no reason provided by model>",
+            redact_pii(reason) if reason else "<no reason provided by model>",
         )
 
     return is_supported, reason
