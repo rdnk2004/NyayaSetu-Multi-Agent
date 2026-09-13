@@ -289,12 +289,12 @@ python scripts/run_evaluation.py
 
 ## Evaluation Results
 
-Benchmark evaluation on 20 labeled scenarios under the Consumer Protection domain (14 clear-cut cases, 6 ambiguous / grey-zone disputes) running live against the real Gemini API (`gemini-3.1-flash-lite`, 113 API calls consumed across 20 end-to-end sessions):
+Benchmark evaluation on 20 labeled scenarios under the Consumer Protection domain (14 clear-cut cases, 6 ambiguous / grey-zone disputes) running live against the real Gemini API (`gemini-3.1-flash-lite`, 108 API calls consumed across 20 end-to-end sessions):
 
 | Metric | Result | Description |
 |---|---|---|
-| **Citation Grounding & Match Rate** | **30.0%** (6/20) | % of cases where `verified=True` and citations match strict ground-truth statutory sections |
-| **Citation Rejection Rate (Hallucination Proxy)** | **26.2%** (11/42) | % of generated citations flagged and rejected by the Citation Verification Agent |
+| **Citation Grounding & Match Rate** | **50.0%** (10/20) | % of cases where `verified=True` and citations match strict ground-truth statutory sections |
+| **Citation Rejection Rate (Hallucination Proxy)** | **10.0%** (3/30) | % of generated citations flagged and rejected by the Citation Verification Agent |
 | **Grey-Zone Detection Accuracy** | **66.7%** (4/6) | % of ambiguous disputes correctly classified as `is_grey_zone=True` by the Debate Mechanism |
 
 *Detailed per-case outputs are saved to `data/eval/results_<timestamp>.json` for audit and inspection.*

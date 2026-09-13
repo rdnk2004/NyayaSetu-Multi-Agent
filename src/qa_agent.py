@@ -57,6 +57,7 @@ def _build_query_from_facts(facts: dict) -> str:
 
     product = str(facts.get("what_was_bought_or_hired") or "").strip()
     issue = str(facts.get("what_went_wrong") or "").strip()
+    question = str(facts.get("specific_legal_question") or "").strip()
     resolution = str(facts.get("resolution_attempted") or "").strip()
 
     parts = []
@@ -64,6 +65,8 @@ def _build_query_from_facts(facts: dict) -> str:
         parts.append(product)
     if issue and issue.lower() != "none":
         parts.append(issue)
+    if question and question.lower() != "none":
+        parts.append(question)
     if resolution and resolution.lower() != "none":
         parts.append(resolution)
 
