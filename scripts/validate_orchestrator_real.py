@@ -57,6 +57,10 @@ def run_orchestrator_validation():
             print(f"Agent requested clarification: {step_result.get('message')}")
             break
 
+        elif stage == "message_too_long":
+            print(f"Message exceeds length limit: {step_result.get('message')}")
+            break
+
         elif stage == "intake_question":
             field_key = step_result["field_key"]
             question_text = step_result["question_text"]

@@ -24,6 +24,7 @@ src_dir = Path(__file__).resolve().parent.parent / "src"
 if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
+from config import MAX_MESSAGE_LENGTH
 from orchestrator import CaseSession
 
 
@@ -309,6 +310,61 @@ def test_answer_question_without_start_raises():
     print("  Defensive check passed: answer_question before start raises ValueError.")
 
 
+def test_message_length_limit_enforced():
+    """
+    Verify MAX_MESSAGE_LENGTH is strictly enforced in start() and answer_question():
+    - Messages over the limit return stage 'message_too_long' without calling any LLM function (call count 0).
+    - Messages under the limit proceed normally.
+    """
+    # 1. start() with message exceeding MAX_MESSAGE_LENGTH
+    session = CaseSession()
+    long_first_message = "X" * (MAX_MESSAGE_LENGTH + 1)
+
+    with patch("orchestrator.understand_query") as mock_understand:
+        res1 = session.start(long_first_message)
+        assert res1["stage"] == "message_too_long"
+        assert f"Please keep your message under {MAX_MESSAGE_LENGTH} characters" in res1["message"]
+        # LLM / understand_query must NOT be called
+        assert mock_understand.call_count == 0
+
+    # 2. start() with valid message under MAX_MESSAGE_LENGTH proceeds normally
+    with patch("orchestrator.understand_query") as mock_understand:
+        mock_understand.return_value = {"domain": "unclear", "facts": {}}
+        res2 = session.start("A short problem description")
+        assert res2["stage"] == "unclear_domain"
+        assert mock_understand.call_count == 1
+
+    # 3. answer_question() with answer exceeding MAX_MESSAGE_LENGTH
+    session_intake = CaseSession()
+    with patch("orchestrator.understand_query") as mock_understand, \
+         patch("orchestrator.IntakeSession") as MockIntakeSession, \
+         patch("orchestrator.answer_question") as mock_qa:
+
+        mock_understand.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Laptop"},
+        }
+        mock_intake = MockIntakeSession.return_value
+        mock_intake.next_question.return_value = {
+            "field_key": "what_went_wrong",
+            "question_text": "What went wrong with the laptop?",
+        }
+
+        # Start session into intake_question state
+        r_start = session_intake.start("My laptop is broken")
+        assert r_start["stage"] == "intake_question"
+
+        # Provide over-length answer
+        long_answer = "Y" * (MAX_MESSAGE_LENGTH + 50)
+        r_ans = session_intake.answer_question("what_went_wrong", long_answer)
+
+        assert r_ans["stage"] == "message_too_long"
+        assert f"Please keep your message under {MAX_MESSAGE_LENGTH} characters" in r_ans["message"]
+        # Downstream intake recording and QA LLM must NOT be called
+        assert mock_intake.record_answer.call_count == 0
+        assert mock_qa.call_count == 0
+
+
 if __name__ == "__main__":
     print("\nRunning CaseSession Orchestrator Unit Tests:")
     test_unclear_domain_stops_immediately()
@@ -316,4 +372,5 @@ if __name__ == "__main__":
     test_checklist_full_skips_straight_to_complete()
     test_final_check_gap_surfaced_once()
     test_answer_question_without_start_raises()
+    test_message_length_limit_enforced()
     print("\nAll CaseSession Orchestrator tests passed successfully!")

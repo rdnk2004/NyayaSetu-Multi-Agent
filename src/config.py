@@ -37,6 +37,7 @@ DEFAULT_LANDMARK_CASE_TOP_K = 3
 
 DEFAULT_MAX_QUESTIONS = 6
 DEFAULT_CHUNK_MAX_WORDS = 350
+DEFAULT_MAX_MESSAGE_LENGTH = 2000
 
 
 # --- Getter Functions ---
@@ -124,6 +125,13 @@ def get_chunk_max_words() -> int:
         return DEFAULT_CHUNK_MAX_WORDS
 
 
+def get_max_message_length() -> int:
+    try:
+        return int(os.environ.get("MAX_MESSAGE_LENGTH", str(DEFAULT_MAX_MESSAGE_LENGTH)))
+    except (ValueError, TypeError):
+        return DEFAULT_MAX_MESSAGE_LENGTH
+
+
 # PEP 562 module attribute lookup for dynamic synchronization with environment changes
 def __getattr__(name: str):
     if name == "GEMINI_MODEL":
@@ -154,4 +162,6 @@ def __getattr__(name: str):
         return get_max_questions()
     if name == "CHUNK_MAX_WORDS":
         return get_chunk_max_words()
+    if name == "MAX_MESSAGE_LENGTH":
+        return get_max_message_length()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
