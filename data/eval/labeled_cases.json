@@ -3,7 +3,7 @@
     "id": "case_01",
     "citizen_message": "I bought a Samsung double-door refrigerator last week for Rs 38,000 from Vijay Sales. Within 3 days the cooling stopped completely and all food spoiled. The company technician visited and confirmed a factory compressor defect in his report, but the store refuses to give a refund or replacement and says only repair is possible. Can I legally demand a replacement or full refund?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(10)", "Section 39", "Section 38", "Section 84", "Section 86"],
+    "expected_cited_sections": ["Section 39"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Samsung double-door refrigerator",
@@ -63,7 +63,7 @@
     "id": "case_05",
     "citizen_message": "I purchased an electric power drill set for Rs 6,200 in cash from a local hardware dealer. When I asked for a printed tax invoice or cash memo, the shopkeeper flatly refused and said cash purchases do not get bills. Does the law mandate issuing a bill?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(6)", "Section 2(47)", "Section 35", "Section 39"],
+    "expected_cited_sections": ["Section 2(47)"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Electric power drill kit",
@@ -153,7 +153,7 @@
     "id": "case_11",
     "citizen_message": "During an elective arthroscopic surgery at a private nursing home, the hospital staff administered a mismatched unit of blood that was past its expiry date, triggering acute hemolytic shock and requiring 10 days of ICU management. Can the hospital be held liable for deficiency of service and product service provider liability?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(11)", "Section 85", "Section 39", "Section 2(6)"],
+    "expected_cited_sections": ["Section 2(11)", "Section 85"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Hospital surgical and medical care services",
@@ -198,7 +198,7 @@
     "id": "case_14",
     "citizen_message": "The District Consumer Commission dismissed my valid complaint regarding a defective television without considering the official laboratory inspection report. I want to appeal against this final order of the District Commission. To which higher forum should I appeal, and what is the statutory appeal provision?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 41", "Section 47", "Section 39", "Section 38"],
+    "expected_cited_sections": ["Section 41", "Section 47"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Smart OLED Television",
@@ -228,7 +228,7 @@
     "id": "case_16",
     "citizen_message": "I purchased an expensive mirrorless camera for Rs 2,40,000 to earn my living as an independent freelance wedding photographer. I have no employees and work entirely on my own. The camera shutter mechanism broke within 2 months. The camera company has rejected my consumer complaint arguing that using the camera for paid photo shoots is a 'commercial purpose' which excludes me from being a consumer under Section 2(7). Can I claim protection as a consumer under the self-employment livelihood exception?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(7)", "Section 83", "Section 84", "Section 86", "Section 39", "Section 2(10)"],
+    "expected_cited_sections": ["Section 2(7)", "Section 83", "Section 84", "Section 86"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "Professional digital camera and lens",
@@ -288,7 +288,7 @@
     "id": "case_20",
     "citizen_message": "My son enrolled in a 2-year classroom coaching program for medical entrance exams, paying Rs 1,80,000 upfront for the entire two years. After attending for 6 weeks, he fell severely ill with jaundice and was advised complete bed rest for 4 months. We requested a pro-rata refund for the remaining 22 months of unused coaching. The institute refused, brandishing a clause in the application form stating 'Fees once paid are strictly non-refundable under any circumstance'. Is such a unilateral non-refundable clause an unfair contract or unfair trade practice?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(46)", "Section 2(47)", "Section 39", "Section 49"],
+    "expected_cited_sections": ["Section 2(46)", "Section 2(47)", "Section 49"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "2-year Medical Coaching Course",
