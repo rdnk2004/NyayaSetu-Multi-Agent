@@ -17,6 +17,7 @@ The caller (e.g. API layer or UI) drives the session turn-by-turn via:
 import logging
 from typing import Any
 
+from config import MAX_MESSAGE_LENGTH
 from query_understanding import understand_query
 from intake_agent import IntakeSession
 from qa_agent import answer_question as qa_answer_question
@@ -50,6 +51,16 @@ class CaseSession:
         - Otherwise initializes IntakeSession and either asks the first question
           or skips straight to QA if the checklist is already satisfied.
         """
+        if len(first_message) > MAX_MESSAGE_LENGTH:
+            self.state = "message_too_long"
+            return OrchestratorStageResult(
+                stage="message_too_long",
+                message=(
+                    f"Please keep your message under {MAX_MESSAGE_LENGTH} characters "
+                    "and split longer situations into a few messages."
+                ),
+            )
+
         understanding = understand_query(first_message)
         domain = understanding.get("domain", "unclear")
         facts = understanding.get("facts", {})
@@ -88,6 +99,16 @@ class CaseSession:
         """
         if self.intake_session is None:
             raise ValueError("Session has not started intake. Call start() first.")
+
+        if len(answer_text) > MAX_MESSAGE_LENGTH:
+            self.state = "message_too_long"
+            return OrchestratorStageResult(
+                stage="message_too_long",
+                message=(
+                    f"Please keep your message under {MAX_MESSAGE_LENGTH} characters "
+                    "and split longer situations into a few messages."
+                ),
+            )
 
         self.intake_session.record_answer(field_key, answer_text)
 
