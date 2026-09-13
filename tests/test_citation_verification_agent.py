@@ -25,7 +25,7 @@ from citation_verification_agent import (
 
 
 def test_all_citations_verified():
-    """Test (1): All citations exist in retrieved chunks and are supported by LLM -> original answer passes through."""
+    """Test (1): All citations exist in retrieved chunks and are supported by LLM -> answer passes through with trailing as_of_date note."""
     qa_result = {
         "answer": "Under Section 2(11), deficiency means any fault, imperfection, or shortcoming in quality or standard.",
         "cited_sections": ["2(11)"],
@@ -39,6 +39,7 @@ def test_all_citations_verified():
                 "section": "2(11)",
                 "title": "Definitions",
                 "source_act": "Consumer Protection Act, 2019",
+                "as_of_date": "2026-08-06",
             },
         }
     ]
@@ -56,8 +57,11 @@ def test_all_citations_verified():
     assert result["rejected_sections"] == []
     assert result["details"]["2(11)"]["supported"] is True
     assert "fault and imperfection" in result["details"]["2(11)"]["reason"]
-    assert result["final_answer"] == qa_result["answer"]
-    print("  Test 1 passed: All citations verified -> original answer retained.")
+    expected_answer = (
+        f"{qa_result['answer']}\n\n(This answer reflects the Consumer Protection Act, 2019 as of 2026-08-06.)"
+    )
+    assert result["final_answer"] == expected_answer
+    print("  Test 1 passed: All citations verified -> original answer with trailing as_of_date note retained.")
 
 
 def test_citation_not_in_retrieved_chunks():
@@ -247,6 +251,7 @@ def test_multiple_citations_supporting_different_subclaims():
                 "section": "2(11)",
                 "title": "Definitions",
                 "source_act": "Consumer Protection Act, 2019",
+                "as_of_date": "2024-01-15",
             },
         },
         {
@@ -256,6 +261,7 @@ def test_multiple_citations_supporting_different_subclaims():
                 "section": "39",
                 "title": "Findings of District Commission",
                 "source_act": "Consumer Protection Act, 2019",
+                "as_of_date": "2026-08-06",
             },
         },
     ]
@@ -282,8 +288,11 @@ def test_multiple_citations_supporting_different_subclaims():
     assert result["rejected_sections"] == []
     assert result["details"]["2(11)"]["supported"] is True
     assert result["details"]["39"]["supported"] is True
-    assert result["final_answer"] == qa_result["answer"]
-    print("  Test 7 passed: Multiple citations supporting separate sub-claims both verified.")
+    expected_answer = (
+        f"{qa_result['answer']}\n\n(This answer reflects the Consumer Protection Act, 2019 as of 2026-08-06.)"
+    )
+    assert result["final_answer"] == expected_answer
+    print("  Test 7 passed: Multiple citations supporting separate sub-claims both verified with most recent as_of_date.")
 
 
 def test_empty_citations_not_verified():
@@ -346,6 +355,8 @@ def test_citation_granularity_matching():
     assert result["verified"] is True
     assert result["verified_sections"] == ["Section 39(1)", "86(d)"]
     assert result["rejected_sections"] == []
+    # When chunks have no as_of_date, final_answer is preserved without crashing
+    assert result["final_answer"] == qa_result["answer"]
 
     # Negative test: 2(11) must NOT match chunk 2(10), and 38(7) must NOT match chunk 38(2)
     qa_mismatched = {
@@ -366,6 +377,76 @@ def test_citation_granularity_matching():
     print("  Test 9 passed: Citation granularity matching and negative discrimination work.")
 
 
+def test_as_of_date_selection_and_graceful_missing():
+    """Test (10): Verifies that:
+    1. Different as_of_date values pick the most recent one.
+    2. Missing, empty, or None as_of_date values are skipped gracefully without crashing.
+    3. If all chunks lack as_of_date, final_answer is returned without a broken trailing note.
+    """
+    qa_result = {
+        "answer": "Under Section 2(7) and Section 35, consumer rights are established.",
+        "cited_sections": ["2(7)", "35"],
+        "status": "answered",
+    }
+    # Case A: Chunks have varied dates, including empty string and None
+    chunks_with_dates = [
+        {
+            "id": "c1",
+            "text": "Section 2(7) defines consumer...",
+            "metadata": {
+                "section": "2(7)",
+                "as_of_date": "2023-05-10",
+                "source_act": "Consumer Protection Act, 2019",
+            },
+        },
+        {
+            "id": "c2",
+            "text": "Section 2(7) sub-clause...",
+            "metadata": {
+                "section": "2(7)",
+                "as_of_date": "",  # empty string skipped gracefully
+            },
+        },
+        {
+            "id": "c3",
+            "text": "Section 35 filing procedure...",
+            "metadata": {
+                "section": "35",
+                "as_of_date": "2026-09-01",  # most recent date
+                "source_act": "Consumer Protection Act, 2019",
+            },
+        },
+        {
+            "id": "c4",
+            "text": "Section 35 supplementary...",
+            "metadata": {
+                "section": "35",
+                "as_of_date": None,  # None skipped gracefully
+            },
+        },
+    ]
+
+    mock_llm_response = json.dumps({"is_supported": True, "reason": "Both sections supported."})
+    with patch("citation_verification_agent.call_llm_structured", return_value=mock_llm_response):
+        res = verify_citations(qa_result, chunks_with_dates)
+
+    assert res["verified"] is True
+    expected_note = "\n\n(This answer reflects the Consumer Protection Act, 2019 as of 2026-09-01.)"
+    assert res["final_answer"] == f"{qa_result['answer']}{expected_note}"
+
+    # Case B: All verified chunks have missing/empty as_of_date -> no trailing note, no crash
+    chunks_without_dates = [
+        {"id": "c1", "text": "Section 2(7) text", "metadata": {"section": "2(7)"}},
+        {"id": "c2", "text": "Section 35 text", "metadata": {"section": "35", "as_of_date": ""}},
+    ]
+    with patch("citation_verification_agent.call_llm_structured", return_value=mock_llm_response):
+        res_no_date = verify_citations(qa_result, chunks_without_dates)
+
+    assert res_no_date["verified"] is True
+    assert res_no_date["final_answer"] == qa_result["answer"]
+    print("  Test 10 passed: Most recent as_of_date selected, missing dates handled gracefully.")
+
+
 if __name__ == "__main__":
     print("\nRunning Citation Verification Agent Tests:")
     test_all_citations_verified()
@@ -377,5 +458,6 @@ if __name__ == "__main__":
     test_multiple_citations_supporting_different_subclaims()
     test_empty_citations_not_verified()
     test_citation_granularity_matching()
+    test_as_of_date_selection_and_graceful_missing()
     print("\nAll Citation Verification Agent tests passed successfully!")
 
