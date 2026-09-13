@@ -286,6 +286,34 @@ def test_multiple_citations_supporting_different_subclaims():
     print("  Test 7 passed: Multiple citations supporting separate sub-claims both verified.")
 
 
+def test_empty_citations_not_verified():
+    """Test (8): An answer with NO citations must NOT be marked verified (case_07-class bug)."""
+    # Case A: status is 'unclear' with empty citations
+    qa_unclear = {
+        "answer": "The retrieved provisions do not cover this issue.",
+        "cited_sections": [],
+        "status": "unclear",
+    }
+    result_unclear = verify_citations(qa_unclear, [])
+    assert result_unclear["verified"] is False
+    assert result_unclear["verified_sections"] == []
+    assert result_unclear["rejected_sections"] == []
+    assert result_unclear["final_answer"] == qa_unclear["answer"]
+
+    # Case B: status is 'answered' but LLM provided 0 citations
+    qa_answered = {
+        "answer": "You can file a complaint in your home city.",
+        "cited_sections": [],
+        "status": "answered",
+    }
+    result_answered = verify_citations(qa_answered, [])
+    assert result_answered["verified"] is False
+    assert result_answered["verified_sections"] == []
+    assert result_answered["rejected_sections"] == []
+    assert result_answered["final_answer"] == UNVERIFIED_FALLBACK_ANSWER
+    print("  Test 8 passed: Empty citations correctly marked unverified.")
+
+
 if __name__ == "__main__":
     print("\nRunning Citation Verification Agent Tests:")
     test_all_citations_verified()
@@ -295,4 +323,6 @@ if __name__ == "__main__":
     test_llm_malformed_response_fails_safe()
     test_logging_on_unsupported_and_parse_error()
     test_multiple_citations_supporting_different_subclaims()
+    test_empty_citations_not_verified()
     print("\nAll Citation Verification Agent tests passed successfully!")
+

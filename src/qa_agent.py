@@ -60,13 +60,11 @@ def _build_query_from_facts(facts: dict) -> str:
     resolution = str(facts.get("resolution_attempted") or "").strip()
 
     parts = []
-    if product:
+    if product and product.lower() != "none":
         parts.append(product)
-    if issue:
+    if issue and issue.lower() != "none":
         parts.append(issue)
-        # Anchor legal embedding with core statutory concepts
-        parts.append("defect product liability deficiency in service")
-    if resolution:
+    if resolution and resolution.lower() != "none":
         parts.append(resolution)
 
     if not parts:

@@ -3,7 +3,7 @@
     "id": "case_01",
     "citizen_message": "I bought a Samsung double-door refrigerator last week for Rs 38,000 from Vijay Sales. Within 3 days the cooling stopped completely and all food spoiled. The company technician visited and confirmed a factory compressor defect in his report, but the store refuses to give a refund or replacement and says only repair is possible. Can I legally demand a replacement or full refund?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(10)", "Section 39"],
+    "expected_cited_sections": ["Section 2(10)", "Section 39", "Section 38", "Section 84", "Section 86"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Samsung double-door refrigerator",
@@ -18,7 +18,7 @@
     "id": "case_02",
     "citizen_message": "My IndiGo flight from Delhi to Mumbai was abruptly cancelled 2 hours before departure without any weather or technical justification. The airline did not provide alternate travel, food, or hotel, and has refused to refund my Rs 9,500 ticket. Is this considered deficiency in service under consumer law?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(11)", "Section 39"],
+    "expected_cited_sections": ["Section 2(11)", "Section 39", "Section 2(6)", "Section 38"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Airline flight ticket Delhi to Mumbai",
@@ -33,7 +33,7 @@
     "id": "case_03",
     "citizen_message": "An herbal cosmetics company runs major television advertisements claiming their oil is clinically proven to regrow 100% hair on bald spots in 14 days or 10x money back. I purchased it for Rs 3,500. After testing the bottle at a government accredited lab, it was found to contain ordinary mineral oil with zero herbal active ingredients. What action can be taken against such false advertisements?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(28)", "Section 21", "Section 89"],
+    "expected_cited_sections": ["Section 2(28)", "Section 21", "Section 89", "Section 2(43)", "Section 2(6)", "Section 39", "Section 2(47)"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Herbal hair regrowth oil",
@@ -78,7 +78,7 @@
     "id": "case_06",
     "citizen_message": "I have a serious dispute regarding a brand new SUV car worth Rs 42 Lakhs where the braking system failed completely on the highway. I want to file a consumer complaint for refund and damages totalling Rs 48 Lakhs. Which consumer court has the pecuniary jurisdiction to hear this?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 34", "Section 83", "Section 84"],
+    "expected_cited_sections": ["Section 34", "Section 83", "Section 84", "Section 82", "Section 85", "Section 39"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "New SUV automobile",
@@ -93,7 +93,7 @@
     "id": "case_07",
     "citizen_message": "I live and work in Lucknow. While on an official trip to Bengaluru, I purchased high-end office furniture from a local showroom. After delivery to my Lucknow home, several joints were broken. The seller claims I can only sue them in Bengaluru where the shop is located. Can I file a consumer complaint in Lucknow where I reside?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 34", "Section 2(6)", "Section 39"],
+    "expected_cited_sections": ["Section 34", "Section 35", "Section 2(6)", "Section 39"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Ergonomic executive desk and chair",
@@ -108,7 +108,7 @@
     "id": "case_08",
     "citizen_message": "My 4-month-old laptop battery suddenly exploded while plugged into the original OEM charger, causing third-degree burns to my left arm and scorching my study table. The medical treatment cost Rs 60,000. Can I bring a product liability action against the manufacturer for personal injury and property harm?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 82", "Section 83", "Section 84", "Section 86"],
+    "expected_cited_sections": ["Section 82", "Section 83", "Section 84", "Section 86", "Section 39"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Laptop computer with original battery and charger",
@@ -123,7 +123,7 @@
     "id": "case_09",
     "citizen_message": "I have filed a consumer complaint regarding an air conditioner that was not installed properly. I want to avoid protracted court hearings and legal expenses. Does the Consumer Protection Act allow the District Commission to refer our matter to a Consumer Mediation Cell for amicable settlement?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 37", "Section 74", "Section 80"],
+    "expected_cited_sections": ["Section 37", "Section 74", "Section 80", "Section 38", "Section 39"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Split Air Conditioner with installation service",
@@ -138,7 +138,7 @@
     "id": "case_10",
     "citizen_message": "Eight months ago, the District Consumer Commission issued a final order directing a real estate developer to refund my booking advance of Rs 6,50,000 with 9% interest within 30 days. The builder has deliberately ignored the order and made no payment. What punishment or penalties can the Commission impose for non-compliance with its order?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 71", "Section 72"],
+    "expected_cited_sections": ["Section 71", "Section 72", "Section 39"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Residential apartment booking",
@@ -153,7 +153,7 @@
     "id": "case_11",
     "citizen_message": "During an elective arthroscopic surgery at a private nursing home, the hospital staff administered a mismatched unit of blood that was past its expiry date, triggering acute hemolytic shock and requiring 10 days of ICU management. Can the hospital be held liable for deficiency of service and product service provider liability?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(11)", "Section 85", "Section 39"],
+    "expected_cited_sections": ["Section 2(11)", "Section 85", "Section 39", "Section 2(6)"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Hospital surgical and medical care services",
@@ -168,7 +168,7 @@
     "id": "case_12",
     "citizen_message": "I ordered an expensive ceramic dinner set on an online shopping portal for Rs 8,000. Upon opening the box in front of the courier, half the plates were shattered. I immediately raised a return request within 12 hours with unboxing video proof. The e-commerce company closed my ticket citing their internal policy that fragile items cannot be returned. Does the law protect me against refusal to refund defective goods?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(47)", "Section 39"],
+    "expected_cited_sections": ["Section 2(47)", "Section 39", "Section 2(6)", "Section 38"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Ceramic luxury dinner set",
@@ -183,7 +183,7 @@
     "id": "case_13",
     "citizen_message": "My debit card was compromised and four unauthorized transactions of Rs 20,000 each took place. I immediately blocked the card via customer care within 15 minutes of the first SMS. Despite my prompt notification, the bank cleared subsequent transactions 4 hours later and refused to reverse the loss, blaming me. Is the bank liable for deficiency in banking service?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(11)", "Section 39"],
+    "expected_cited_sections": ["Section 2(11)", "Section 39", "Section 2(6)", "Section 35"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Banking and debit card payment facility",
@@ -198,7 +198,7 @@
     "id": "case_14",
     "citizen_message": "The District Consumer Commission dismissed my valid complaint regarding a defective television without considering the official laboratory inspection report. I want to appeal against this final order of the District Commission. To which higher forum should I appeal, and what is the statutory appeal provision?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 41", "Section 47"],
+    "expected_cited_sections": ["Section 41", "Section 47", "Section 39", "Section 38"],
     "case_type": "clear_cut",
     "intake_answers": {
       "what_was_bought_or_hired": "Smart OLED Television",
@@ -213,7 +213,7 @@
     "id": "case_15",
     "citizen_message": "My commercial RO water purifier boiler exploded in my bakery kitchen, causing Rs 1.5 Lakhs in water damage. The manufacturer refuses product liability compensation, pointing out that two months ago my local plumber replaced an external sediment filter cartridge with an unbranded filter, claiming Section 87 statutory exception for product alteration. However, the forensic engineer report proves the explosion was caused by a defective internal thermostat switch that was 100% untouched OEM factory hardware. Is the manufacturer still liable or does the external filter change completely exempt them?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 84", "Section 87"],
+    "expected_cited_sections": ["Section 84", "Section 87", "Section 82", "Section 83", "Section 86", "Section 39"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "Commercial RO Water Purifier unit",
@@ -228,7 +228,7 @@
     "id": "case_16",
     "citizen_message": "I purchased an expensive mirrorless camera for Rs 2,40,000 to earn my living as an independent freelance wedding photographer. I have no employees and work entirely on my own. The camera shutter mechanism broke within 2 months. The camera company has rejected my consumer complaint arguing that using the camera for paid photo shoots is a 'commercial purpose' which excludes me from being a consumer under Section 2(7). Can I claim protection as a consumer under the self-employment livelihood exception?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(7)"],
+    "expected_cited_sections": ["Section 2(7)", "Section 83", "Section 84", "Section 86", "Section 39", "Section 2(10)"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "Professional digital camera and lens",
@@ -243,7 +243,7 @@
     "id": "case_17",
     "citizen_message": "I purchased an induction pressure cooker from a seller on a major e-commerce marketplace. The cooker lid blew off while preparing dinner, causing burns. When I tried to trace the manufacturer, the listed company in the invoice was a shell firm that has ceased operations. I am holding the e-commerce product seller liable under Section 86, but the seller contends they merely acted as an intermediary facilitator without physical possession or alteration of the sealed package. Can the seller be held liable under product liability?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 84", "Section 86"],
+    "expected_cited_sections": ["Section 84", "Section 86", "Section 82", "Section 83", "Section 39"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "Induction Pressure Cooker",
@@ -258,7 +258,7 @@
     "id": "case_18",
     "citizen_message": "I purchased an electric scooter 2 years and 4 months ago. From the first month, the battery range was only 25 km instead of the promised 100 km. The authorised service center took the scooter in for repair six separate times and kept promising software updates, with the final unsuccessful repair job-card dated only 3 weeks ago before they declared it unfixable. The company now claims my complaint is time-barred under Section 69 because 2 years have passed from the original date of purchase. Does the continuous repair constitute a continuing cause of action?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 69", "Section 2(11)"],
+    "expected_cited_sections": ["Section 69", "Section 2(11)", "Section 38", "Section 39"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "Electric Scooter",
@@ -273,7 +273,7 @@
     "id": "case_19",
     "citizen_message": "I bought a halogen convection room heater. Last winter, the heater caught fire and partially charred my sofa when placed about 2 feet away. The manufacturer invokes Section 87(2) asserting that the user manual stated a minimum clearance of 3 feet, claiming product misuse. However, there was no warning label or icon whatsoever on the heater unit itself, and the manual was a 60-page generic booklet without highlighted warnings. Can the manufacturer be liable under Section 84 for failure to provide adequate warnings on the product itself?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 84", "Section 87"],
+    "expected_cited_sections": ["Section 84", "Section 87", "Section 82", "Section 83", "Section 39"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "Halogen convection room heater",
@@ -288,7 +288,7 @@
     "id": "case_20",
     "citizen_message": "My son enrolled in a 2-year classroom coaching program for medical entrance exams, paying Rs 1,80,000 upfront for the entire two years. After attending for 6 weeks, he fell severely ill with jaundice and was advised complete bed rest for 4 months. We requested a pro-rata refund for the remaining 22 months of unused coaching. The institute refused, brandishing a clause in the application form stating 'Fees once paid are strictly non-refundable under any circumstance'. Is such a unilateral non-refundable clause an unfair contract or unfair trade practice?",
     "expected_domain": "Consumer Protection",
-    "expected_cited_sections": ["Section 2(46)", "Section 2(47)"],
+    "expected_cited_sections": ["Section 2(46)", "Section 2(47)", "Section 39", "Section 49"],
     "case_type": "ambiguous",
     "intake_answers": {
       "what_was_bought_or_hired": "2-year Medical Coaching Course",

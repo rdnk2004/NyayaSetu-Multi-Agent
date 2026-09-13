@@ -103,12 +103,13 @@ def verify_citations(
     cited_sections = qa_result.get("cited_sections", [])
 
     if not cited_sections:
+        logger.warning("Citation verification: answer has no cited sections to verify.")
         return CitationVerificationResult(
-            verified=True,
+            verified=False,
             verified_sections=[],
             rejected_sections=[],
             details={},
-            final_answer=answer,
+            final_answer=answer if qa_result.get("status") == "unclear" else UNVERIFIED_FALLBACK_ANSWER,
         )
 
     verified_sections: list[str] = []
@@ -168,7 +169,11 @@ def verify_citations(
         else:
             rejected_sections.append(sec_str)
 
-    all_verified = len(rejected_sections) == 0 and len(verified_sections) == len(cited_sections)
+    all_verified = (
+        len(rejected_sections) == 0
+        and len(verified_sections) == len(cited_sections)
+        and len(cited_sections) > 0
+    )
 
     return CitationVerificationResult(
         verified=all_verified,

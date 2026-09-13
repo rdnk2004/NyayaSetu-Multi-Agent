@@ -157,6 +157,17 @@ def run_evaluation():
         if stage_result.stage == "final_check_gap":
             stage_result = session.proceed()
 
+        if case_id == "case_03" and session.intake_session:
+            brief = session.intake_session.to_case_brief()
+            diag_q = _build_query_from_facts(brief.get("facts", {}))
+            print(f"  [DIAGNOSTIC case_03] Constructed Query: \"{diag_q}\"")
+            diag_chunks = retrieve(diag_q, top_k=5)
+            diag_secs = [
+                f"Sec {ch.get('metadata', {}).get('section')} ({ch.get('metadata', {}).get('title')})"
+                for ch in diag_chunks
+            ]
+            print(f"  [DIAGNOSTIC case_03] Retrieved Chunks: {diag_secs}")
+
         # Extract pipeline outputs
         is_verified = bool(stage_result.verified)
         verified_sections = list(stage_result.verified_sections or [])
