@@ -15,6 +15,7 @@ Implements run_debate(case_brief: dict, retrieved_chunks: list[dict]) -> dict:
 4. When retrieved_chunks is empty, skips LLM calls entirely and returns safe defaults.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 from typing import Any
@@ -238,13 +239,24 @@ def run_debate(case_brief: CaseBrief | dict, retrieved_chunks: list[dict]) -> De
     facts_text = _format_facts_for_prompt(facts)
     chunks_text = _format_chunks_for_prompt(retrieved_chunks)
 
-    # 1. Plaintiff Advocate LLM Call
+    # 1. Plaintiff and Defense Advocate LLM Calls (Concurrent via ThreadPoolExecutor)
     plaintiff_prompt = PLAINTIFF_PROMPT_TEMPLATE.format(
         domain=domain,
         facts_text=facts_text,
         chunks_text=chunks_text,
     )
-    raw_plaintiff = call_llm_structured(plaintiff_prompt)
+    defense_prompt = DEFENSE_PROMPT_TEMPLATE.format(
+        domain=domain,
+        facts_text=facts_text,
+        chunks_text=chunks_text,
+    )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_plaintiff = executor.submit(call_llm_structured, plaintiff_prompt)
+        future_defense = executor.submit(call_llm_structured, defense_prompt)
+        raw_plaintiff = future_plaintiff.result()
+        raw_defense = future_defense.result()
+
     plaintiff_data = safe_parse_llm_json(raw_plaintiff, {})
     if not plaintiff_data:
         return DebateResult(
@@ -260,13 +272,6 @@ def run_debate(case_brief: CaseBrief | dict, retrieved_chunks: list[dict]) -> De
     plaintiff_argument = str(plaintiff_data.get("argument", "") or "").strip()
     plaintiff_cited_sections = _clean_citations(plaintiff_data.get("cited_sections", []))
 
-    # 2. Defense Advocate LLM Call
-    defense_prompt = DEFENSE_PROMPT_TEMPLATE.format(
-        domain=domain,
-        facts_text=facts_text,
-        chunks_text=chunks_text,
-    )
-    raw_defense = call_llm_structured(defense_prompt)
     defense_data = safe_parse_llm_json(raw_defense, {})
     if not defense_data:
         return DebateResult(

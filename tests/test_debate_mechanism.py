@@ -73,7 +73,15 @@ def test_opposing_arguments_grey_zone():
         "clearly_supported_side": None,
     })
 
-    with patch("debate_mechanism.call_llm_structured", side_effect=[mock_plaintiff, mock_defense, mock_judge]) as mock_llm:
+    def mock_dispatch(prompt: str):
+        if "citizen (plaintiff/consumer)" in prompt:
+            return mock_plaintiff
+        elif "respondent/opposing party (defense" in prompt:
+            return mock_defense
+        else:
+            return mock_judge
+
+    with patch("debate_mechanism.call_llm_structured", side_effect=mock_dispatch) as mock_llm:
         result = run_debate(case_brief, mock_chunks)
 
     assert mock_llm.call_count == 3
@@ -134,7 +142,15 @@ def test_judge_determines_clearly_supported_side():
         "clearly_supported_side": "plaintiff",
     })
 
-    with patch("debate_mechanism.call_llm_structured", side_effect=[mock_plaintiff, mock_defense, mock_judge]) as mock_llm:
+    def mock_dispatch(prompt: str):
+        if "citizen (plaintiff/consumer)" in prompt:
+            return mock_plaintiff
+        elif "respondent/opposing party (defense" in prompt:
+            return mock_defense
+        else:
+            return mock_judge
+
+    with patch("debate_mechanism.call_llm_structured", side_effect=mock_dispatch) as mock_llm:
         result = run_debate(case_brief, mock_chunks)
 
     assert mock_llm.call_count == 3
@@ -219,7 +235,15 @@ def test_malformed_json_fails_safe():
 
     # 4a: Call 1 (Plaintiff) fails
     for bad in malformed_payloads:
-        with patch("debate_mechanism.call_llm_structured", side_effect=[bad, valid_defense, valid_judge]):
+        def mock_dispatch_plaintiff_fail(prompt: str, bad_val=bad):
+            if "citizen (plaintiff/consumer)" in prompt:
+                return bad_val
+            elif "respondent/opposing party (defense" in prompt:
+                return valid_defense
+            else:
+                return valid_judge
+
+        with patch("debate_mechanism.call_llm_structured", side_effect=mock_dispatch_plaintiff_fail):
             res = run_debate(case_brief, mock_chunks)
         assert isinstance(res, (dict, DebateResult))
         assert res["is_grey_zone"] is False
@@ -228,7 +252,15 @@ def test_malformed_json_fails_safe():
 
     # 4b: Call 2 (Defense) fails
     for bad in malformed_payloads:
-        with patch("debate_mechanism.call_llm_structured", side_effect=[valid_plaintiff, bad, valid_judge]):
+        def mock_dispatch_defense_fail(prompt: str, bad_val=bad):
+            if "citizen (plaintiff/consumer)" in prompt:
+                return valid_plaintiff
+            elif "respondent/opposing party (defense" in prompt:
+                return bad_val
+            else:
+                return valid_judge
+
+        with patch("debate_mechanism.call_llm_structured", side_effect=mock_dispatch_defense_fail):
             res = run_debate(case_brief, mock_chunks)
         assert isinstance(res, (dict, DebateResult))
         assert res["is_grey_zone"] is False
@@ -237,7 +269,15 @@ def test_malformed_json_fails_safe():
 
     # 4c: Call 3 (Judge) fails
     for bad in malformed_payloads:
-        with patch("debate_mechanism.call_llm_structured", side_effect=[valid_plaintiff, valid_defense, bad]):
+        def mock_dispatch_judge_fail(prompt: str, bad_val=bad):
+            if "citizen (plaintiff/consumer)" in prompt:
+                return valid_plaintiff
+            elif "respondent/opposing party (defense" in prompt:
+                return valid_defense
+            else:
+                return bad_val
+
+        with patch("debate_mechanism.call_llm_structured", side_effect=mock_dispatch_judge_fail):
             res = run_debate(case_brief, mock_chunks)
         assert isinstance(res, (dict, DebateResult))
         assert res["is_grey_zone"] is False
