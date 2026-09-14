@@ -7,6 +7,7 @@ from the vector store. This is the function every later agent
 """
 
 from pathlib import Path
+from typing import Any
 
 from config import (
     CHROMA_DB_PATH,
@@ -25,6 +26,8 @@ DB_PATH = CHROMA_DB_PATH
 COLLECTION_NAME = STATUTE_COLLECTION_NAME
 
 _model = None
+_client = None
+_collections: dict[str, Any] = {}
 _collection = None
 
 
@@ -35,18 +38,30 @@ def _get_model():
     return _model
 
 
-def _get_collection():
-    global _collection
-    if _collection is None:
-        client = chromadb.PersistentClient(path=str(DB_PATH))
-        _collection = client.get_collection(COLLECTION_NAME)
-    return _collection
+def _get_collection(collection_name: str = STATUTE_COLLECTION_NAME):
+    global _client, _collections, _collection
+    if collection_name not in _collections:
+        if _client is None:
+            _client = chromadb.PersistentClient(path=str(DB_PATH))
+        _collections[collection_name] = _client.get_collection(collection_name)
+    if collection_name == STATUTE_COLLECTION_NAME:
+        _collection = _collections[collection_name]
+    return _collections[collection_name]
 
 
-def retrieve(query: str, top_k: int = QA_RETRIEVAL_TOP_K) -> list[dict]:
-    """Return the top_k chunks most relevant to the query, with metadata."""
+def retrieve(
+    query: str,
+    collection_name: str = STATUTE_COLLECTION_NAME,
+    top_k: int = QA_RETRIEVAL_TOP_K,
+) -> list[dict]:
+    """Return the top_k chunks most relevant to the query from the specified Chroma collection."""
+    # Defensive handling in case top_k is passed positionally as second argument
+    if isinstance(collection_name, int):
+        top_k = collection_name
+        collection_name = STATUTE_COLLECTION_NAME
+
     model = _get_model()
-    collection = _get_collection()
+    collection = _get_collection(collection_name)
 
     query_embedding = model.encode([query]).tolist()
 
@@ -56,13 +71,14 @@ def retrieve(query: str, top_k: int = QA_RETRIEVAL_TOP_K) -> list[dict]:
     )
 
     hits = []
-    for i in range(len(results["ids"][0])):
-        hits.append({
-            "id": results["ids"][0][i],
-            "text": results["documents"][0][i],
-            "metadata": results["metadatas"][0][i],
-            "distance": results["distances"][0][i],
-        })
+    if results and results.get("ids") and len(results["ids"]) > 0:
+        for i in range(len(results["ids"][0])):
+            hits.append({
+                "id": results["ids"][0][i],
+                "text": results["documents"][0][i],
+                "metadata": results["metadatas"][0][i],
+                "distance": results["distances"][0][i],
+            })
     return hits
 
 
