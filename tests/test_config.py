@@ -30,6 +30,7 @@ def test_default_config_values():
     assert config.DEFAULT_MAX_QUESTIONS == 6
     assert config.DEFAULT_CHUNK_MAX_WORDS == 350
     assert config.DEFAULT_MAX_MESSAGE_LENGTH == 2000
+    assert config.DEFAULT_LOG_LEVEL == "INFO"
 
 
 def test_dynamic_env_override():
@@ -37,6 +38,7 @@ def test_dynamic_env_override():
     original_qa_top_k = os.environ.get("QA_RETRIEVAL_TOP_K")
     original_debate_top_k = os.environ.get("DEBATE_RETRIEVAL_TOP_K")
     original_msg_len = os.environ.get("MAX_MESSAGE_LENGTH")
+    original_log_level = os.environ.get("LOG_LEVEL")
 
     try:
         os.environ["MAX_CALLS_PER_SESSION"] = "99"
@@ -50,6 +52,9 @@ def test_dynamic_env_override():
 
         os.environ["MAX_MESSAGE_LENGTH"] = "1500"
         assert config.MAX_MESSAGE_LENGTH == 1500
+
+        os.environ["LOG_LEVEL"] = "DEBUG"
+        assert config.LOG_LEVEL == "DEBUG"
     finally:
         if original_session is not None:
             os.environ["MAX_CALLS_PER_SESSION"] = original_session
@@ -70,6 +75,11 @@ def test_dynamic_env_override():
             os.environ["MAX_MESSAGE_LENGTH"] = original_msg_len
         else:
             os.environ.pop("MAX_MESSAGE_LENGTH", None)
+
+        if original_log_level is not None:
+            os.environ["LOG_LEVEL"] = original_log_level
+        else:
+            os.environ.pop("LOG_LEVEL", None)
 
 
 def test_top_k_separation_preserved():

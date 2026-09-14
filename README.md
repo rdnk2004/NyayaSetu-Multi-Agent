@@ -88,10 +88,12 @@ testing, not code review alone:
    account for when debugging an unexpected result — rerun before
    assuming a retrieval or prompt bug.
 
-Diagnostic print statements added during this investigation
-(`qa_agent.py`'s built-query print, `orchestrator.py`'s retrieved-chunks
-print) are intentionally still in the code — useful for future
-debugging, kept as a conscious choice rather than forgotten scaffolding.
+Diagnostic logging added during this investigation
+(`qa_agent.py`'s built-query log, `orchestrator.py`'s retrieved-chunks
+log) is cleanly routed to `logger.debug()` via the centralized logging
+subsystem (`src/logging_config.py`), making detailed retrieval traces
+available on demand by setting `LOG_LEVEL=DEBUG` without needing to
+hand-edit files.
 
 ---
 
@@ -250,6 +252,18 @@ python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env            # then fill in GEMINI_API_KEY & Indian Kanoon credentials
+```
+
+### Logging Configuration
+
+NyayaSetu uses a centralized logging subsystem (`src/logging_config.py`). By default, logs are emitted at `INFO` level. To enable granular debug traces (including `qa_agent`'s built search queries and `orchestrator`'s retrieved chunks per session):
+
+```bash
+# In your .env file:
+LOG_LEVEL=DEBUG
+
+# Or via environment variable:
+export LOG_LEVEL=DEBUG          # Windows PowerShell: $env:LOG_LEVEL="DEBUG"
 ```
 
 ## Running the retrieval pipeline

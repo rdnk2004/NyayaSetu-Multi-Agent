@@ -11,10 +11,15 @@ Consumes a completed case brief from the Intake Agent:
     JSON parsing fails (never hallucinate / guess)
 """
 
+import logging
+
 from config import QA_RETRIEVAL_TOP_K
 from llm_client import call_llm_structured, safe_parse_llm_json
 from models import CaseBrief, QAResult
+from pii_redaction import redact_pii
 from retrieve import retrieve
+
+logger = logging.getLogger(__name__)
 
 
 QA_PROMPT_TEMPLATE = """You are a legal question-answering assistant for Indian Law. \
@@ -78,7 +83,9 @@ def _build_query_from_facts(facts: dict) -> str:
                 if v_str:
                     parts.append(v_str)
 
-    return " ".join(parts)
+    query = " ".join(parts)
+    logger.debug("Built search query from case facts: %s", redact_pii(query))
+    return query
 
 
 def _format_facts_for_prompt(facts: dict) -> str:
@@ -157,12 +164,19 @@ def answer_question(case_brief: CaseBrief | dict) -> QAResult:
 
     chunks = retrieve(query, top_k=QA_RETRIEVAL_TOP_K)
     if not chunks:
+        logger.debug("No statutory chunks retrieved for query: %s", redact_pii(query))
         return QAResult(
             answer="",
             cited_sections=[],
             status="unclear",
             retrieved_chunks=[],
         )
+
+    if logger.isEnabledFor(logging.DEBUG):
+        chunk_summaries = ", ".join(
+            f"Section {c.get('metadata', {}).get('section', '')}" for c in chunks
+        )
+        logger.debug("Retrieved %d candidate chunks for QA (%s)", len(chunks), chunk_summaries)
 
     prompt = QA_PROMPT_TEMPLATE.format(
         domain=domain,
