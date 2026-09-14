@@ -40,8 +40,6 @@ DEFAULT_CHUNK_MAX_WORDS = 350
 DEFAULT_MAX_MESSAGE_LENGTH = 2000
 DEFAULT_LOG_LEVEL = "INFO"
 
-import logging_config
-
 
 # --- Getter Functions ---
 def get_gemini_model() -> str:
@@ -174,3 +172,7 @@ def __getattr__(name: str):
     if name == "LOG_LEVEL":
         return get_log_level()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+# Initialize logging subsystem after all config getters are defined
+import logging_config
