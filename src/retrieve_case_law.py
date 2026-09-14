@@ -6,65 +6,17 @@ from the dedicated 'case_law' vector store collection. Follows the exact same
 interface and return shape as retrieve.py for consistency across agents.
 """
 
-from pathlib import Path
-
 from config import (
-    CHROMA_DB_PATH,
-    EMBEDDING_MODEL,
     CASE_LAW_COLLECTION_NAME,
     LANDMARK_CASE_TOP_K,
 )
 from pii_redaction import redact_pii
-
-# pyrefly: ignore [missing-import]
-import chromadb
-# pyrefly: ignore [missing-import]
-from sentence_transformers import SentenceTransformer
-
-DB_PATH = CHROMA_DB_PATH
-COLLECTION_NAME = CASE_LAW_COLLECTION_NAME
-
-_model = None
-_collection = None
-
-
-def _get_model():
-    global _model
-    if _model is None:
-        _model = SentenceTransformer(EMBEDDING_MODEL)
-    return _model
-
-
-def _get_collection():
-    global _collection
-    if _collection is None:
-        client = chromadb.PersistentClient(path=str(DB_PATH))
-        _collection = client.get_collection(COLLECTION_NAME)
-    return _collection
+from retrieve import retrieve
 
 
 def retrieve_case_law(query: str, top_k: int = LANDMARK_CASE_TOP_K) -> list[dict]:
     """Return the top_k case law entries most relevant to the query, with metadata."""
-    model = _get_model()
-    collection = _get_collection()
-
-    query_embedding = model.encode([query]).tolist()
-
-    results = collection.query(
-        query_embeddings=query_embedding,
-        n_results=top_k,
-    )
-
-    hits = []
-    if results and results.get("ids") and len(results["ids"]) > 0:
-        for i in range(len(results["ids"][0])):
-            hits.append({
-                "id": results["ids"][0][i],
-                "text": results["documents"][0][i],
-                "metadata": results["metadatas"][0][i],
-                "distance": results["distances"][0][i],
-            })
-    return hits
+    return retrieve(query, collection_name=CASE_LAW_COLLECTION_NAME, top_k=top_k)
 
 
 if __name__ == "__main__":
