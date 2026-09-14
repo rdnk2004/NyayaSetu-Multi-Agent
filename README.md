@@ -289,15 +289,24 @@ python scripts/run_evaluation.py
 
 ## Evaluation Results
 
-Benchmark evaluation on 20 labeled scenarios under the Consumer Protection domain (14 clear-cut cases, 6 ambiguous / grey-zone disputes) running live against the real Gemini API (`gemini-3.1-flash-lite`, 108 API calls consumed across 20 end-to-end sessions):
+Benchmark evaluation on 20 labeled scenarios under the Consumer Protection domain (14 clear-cut cases, 6 ambiguous / grey-zone disputes) running live against the real Gemini API (`gemini-3.1-flash-lite`, ~107–108 API calls consumed across 20 end-to-end sessions):
 
-| Metric | Result | Description |
-|---|---|---|
-| **Citation Grounding & Match Rate** | **50.0%** (10/20) | % of cases where `verified=True` and citations match strict ground-truth statutory sections |
-| **Citation Rejection Rate (Hallucination Proxy)** | **10.0%** (3/30) | % of generated citations flagged and rejected by the Citation Verification Agent |
-| **Grey-Zone Detection Accuracy** | **66.7%** (4/6) | % of ambiguous disputes correctly classified as `is_grey_zone=True` by the Debate Mechanism |
+| Metric | Baseline | Latest | Description |
+|---|---|---|---|
+| **Citation Grounding & Match Rate** | 50.0% (10/20) | **60.0%** (12/20) | % of cases where `verified=True` and citations match strict ground-truth statutory sections |
+| **Citation Rejection Rate (Hallucination Proxy)** | 10.0% (3/30) | **3.4%** (1/29) | % of generated citations flagged and rejected by the Citation Verification Agent |
+| **Grey-Zone Detection Accuracy** | 66.7% (4/6) | **66.7%** (4/6) | % of ambiguous disputes correctly classified as `is_grey_zone=True` by the Debate Mechanism |
 
 *Detailed per-case outputs are saved to `data/eval/results_<timestamp>.json` for audit and inspection.*
+
+### Evaluation Methodology & Variance Note
+
+> [!WARNING]
+> **Account for LLM Non-Determinism When Interpreting Results:**
+> Individual eval runs carry real noise from LLM non-determinism across multiple pipeline stages (stochastic fact extraction in `understand_query()`, phrasing variance in `answer_question()`, and audit nuances in `verify_citations()`).
+> 
+> - **Do not attribute cause from single-run case diffs:** Point-in-time case-by-case diffs between two isolated runs should **not** be used to definitively attribute cause to a specific code change. In practice, individual cases (e.g. `case_13` or `case_18`) can flip between pass and fail purely due to natural model sampling variance, even when the underlying code logic is unchanged.
+> - **Run 2–3 passes to establish natural variance:** Before trusting an apparent delta or declaring a regression, run the evaluation 2–3 times to establish baseline variance bounds versus genuine signal.
 
 ---
 
