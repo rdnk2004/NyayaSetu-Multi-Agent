@@ -38,6 +38,9 @@ DEFAULT_LANDMARK_CASE_TOP_K = 3
 DEFAULT_MAX_QUESTIONS = 6
 DEFAULT_CHUNK_MAX_WORDS = 350
 DEFAULT_MAX_MESSAGE_LENGTH = 2000
+DEFAULT_LOG_LEVEL = "INFO"
+
+import logging_config
 
 
 # --- Getter Functions ---
@@ -132,6 +135,10 @@ def get_max_message_length() -> int:
         return DEFAULT_MAX_MESSAGE_LENGTH
 
 
+def get_log_level() -> str:
+    return os.environ.get("LOG_LEVEL", DEFAULT_LOG_LEVEL).strip().upper() or DEFAULT_LOG_LEVEL
+
+
 # PEP 562 module attribute lookup for dynamic synchronization with environment changes
 def __getattr__(name: str):
     if name == "GEMINI_MODEL":
@@ -164,4 +171,6 @@ def __getattr__(name: str):
         return get_chunk_max_words()
     if name == "MAX_MESSAGE_LENGTH":
         return get_max_message_length()
+    if name == "LOG_LEVEL":
+        return get_log_level()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

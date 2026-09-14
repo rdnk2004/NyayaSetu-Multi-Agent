@@ -150,6 +150,13 @@ class CaseSession:
         qa_result = answer_question(case_brief)
 
         retrieved_chunks = qa_result.get("retrieved_chunks", [])
+        if logger.isEnabledFor(logging.DEBUG):
+            lines = [
+                f"  {c.get('metadata', {}).get('section', '')} : {c.get('metadata', {}).get('title', '')}"
+                for c in retrieved_chunks
+            ]
+            logger.debug("Retrieved chunks (section : title):\n%s", "\n".join(lines))
+
         verification = verify_citations(qa_result, retrieved_chunks)
 
         self.final_result = verification
