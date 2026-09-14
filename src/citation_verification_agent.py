@@ -9,6 +9,7 @@ Validates the output of the QA Agent against the retrieved statutory chunks:
 4. If ANY citation fails verification, reverts final_answer to a safe fallback.
 """
 
+from datetime import date, datetime
 import json
 import logging
 import re
@@ -24,6 +25,29 @@ UNVERIFIED_FALLBACK_ANSWER = (
     "The legal citations in the generated answer could not be verified against the official "
     "statutory provisions. The situation remains unclear and requires manual legal review."
 )
+
+
+def _parse_as_of_date(date_val: Any) -> datetime | None:
+    """Parse date from string or date object into datetime for chronological comparison."""
+    if not date_val:
+        return None
+    if isinstance(date_val, datetime):
+        return date_val
+    if isinstance(date_val, date):
+        return datetime(date_val.year, date_val.month, date_val.day)
+    val_str = str(date_val).strip()
+    if not val_str:
+        return None
+    try:
+        return datetime.fromisoformat(val_str)
+    except Exception:
+        pass
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y", "%B %d, %Y", "%d %B %Y"):
+        try:
+            return datetime.strptime(val_str, fmt)
+        except ValueError:
+            pass
+    return None
 
 
 def _normalize_section(sec: str) -> str:
@@ -223,11 +247,42 @@ def verify_citations(
         and len(cited_sections) > 0
     )
 
+    final_answer = UNVERIFIED_FALLBACK_ANSWER
+    if all_verified:
+        final_answer = answer
+        # Find the most recent as_of_date among all verified_sections' source chunks
+        candidate_dates: list[tuple[datetime | None, str, str]] = []
+
+        for sec in verified_sections:
+            for chunk in retrieved_chunks:
+                chunk_sec = (chunk.get("metadata") or {}).get("section", "") or chunk.get("section", "")
+                if _sections_are_compatible(sec, chunk_sec):
+                    meta = chunk.get("metadata") if isinstance(chunk.get("metadata"), dict) else {}
+                    raw_date = meta.get("as_of_date") or chunk.get("as_of_date")
+                    if not raw_date:
+                        continue
+                    date_str = str(raw_date).strip()
+                    if not date_str:
+                        continue
+                    source_act = meta.get("source_act") or chunk.get("source_act") or "Consumer Protection Act, 2019"
+                    parsed_dt = _parse_as_of_date(raw_date)
+                    candidate_dates.append((parsed_dt, date_str, str(source_act).strip()))
+
+        if candidate_dates:
+            parsed_candidates = [c for c in candidate_dates if c[0] is not None]
+            if parsed_candidates:
+                best_candidate = max(parsed_candidates, key=lambda c: c[0])
+            else:
+                best_candidate = max(candidate_dates, key=lambda c: c[1])
+
+            _, best_date_str, best_act = best_candidate
+            final_answer = f"{answer}\n\n(This answer reflects the {best_act} as of {best_date_str}.)"
+
     return CitationVerificationResult(
         verified=all_verified,
         verified_sections=verified_sections,
         rejected_sections=rejected_sections,
         details=details,
-        final_answer=answer if all_verified else UNVERIFIED_FALLBACK_ANSWER,
+        final_answer=final_answer,
     )
 
