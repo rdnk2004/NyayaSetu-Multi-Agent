@@ -20,6 +20,7 @@ from models import (
     LandmarkCase,
     LandmarkCaseResult,
     DebateResult,
+    CriticResult,
     OrchestratorStageResult,
 )
 
@@ -144,19 +145,47 @@ def test_orchestrator_stage_result_model():
     assert s3["rejected_sections"] == []
     assert s3.debate is None
     assert s3["debate"] is None
+    assert s3.critic is None
+    assert s3["critic"] is None
 
-    # Complete stage with populated debate
+    # Complete stage with populated debate and critic
     d = DebateResult(is_grey_zone=True, judge_summary="Genuine dispute between provisions.")
+    c = CriticResult(
+        approved=False,
+        final_answer="Softened answer",
+        critique_notes="Flagged grey zone",
+        flagged_grey_zone_conflict=True,
+    )
     s4 = OrchestratorStageResult(
         stage="complete",
         verified=True,
-        final_answer="Answer here",
+        final_answer="Softened answer",
         debate=d,
+        critic=c,
     )
     assert s4.debate is not None
     assert s4.debate.is_grey_zone is True
     assert s4["debate"]["is_grey_zone"] is True
     assert s4["debate"]["judge_summary"] == "Genuine dispute between provisions."
+    assert s4.critic is not None
+    assert s4.critic.approved is False
+    assert s4["critic"]["approved"] is False
+    assert s4["critic"]["flagged_grey_zone_conflict"] is True
+
+
+def test_critic_result_model():
+    c = CriticResult(
+        approved=True,
+        final_answer="Final calibrated answer.",
+        critique_notes="Audit passed.",
+        flagged_grey_zone_conflict=False,
+    )
+    assert c.approved is True
+    assert c["approved"] is True
+    assert c.final_answer == "Final calibrated answer."
+    assert c["final_answer"] == "Final calibrated answer."
+    assert c.critique_notes == "Audit passed."
+    assert c.flagged_grey_zone_conflict is False
 
 
 if __name__ == "__main__":
@@ -165,5 +194,6 @@ if __name__ == "__main__":
     test_citation_verification_result_model()
     test_landmark_case_result_model()
     test_debate_result_model()
+    test_critic_result_model()
     test_orchestrator_stage_result_model()
     print("All models unit tests passed successfully!")

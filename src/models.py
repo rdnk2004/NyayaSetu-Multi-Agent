@@ -139,6 +139,16 @@ class DebateResult(NyayaSetuModel):
     clearly_supported_side: str | None = None
 
 
+class CriticResult(NyayaSetuModel):
+    """
+    Output of Critic Agent performing final sanity pass on verified answer and debate outcome.
+    """
+    approved: bool = True
+    final_answer: str = ""
+    critique_notes: str = ""
+    flagged_grey_zone_conflict: bool = False
+
+
 class OrchestratorStageResult(NyayaSetuModel):
     """
     Output of CaseSession state transitions (start, answer_question, proceed).
@@ -153,3 +163,4 @@ class OrchestratorStageResult(NyayaSetuModel):
     verified_sections: list[str] = Field(default_factory=list)
     rejected_sections: list[str] = Field(default_factory=list)
     debate: DebateResult | None = None
+    critic: CriticResult | None = None

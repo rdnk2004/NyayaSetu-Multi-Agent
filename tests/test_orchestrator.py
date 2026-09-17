@@ -27,7 +27,7 @@ if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
 from config import MAX_MESSAGE_LENGTH, DEBATE_RETRIEVAL_TOP_K
-from models import DebateResult
+from models import DebateResult, CriticResult
 from orchestrator import CaseSession
 
 
@@ -105,12 +105,20 @@ def test_full_multi_turn_flow():
         clearly_supported_side=None,
     )
 
+    mock_critic_result = CriticResult(
+        approved=True,
+        final_answer=mock_verification["final_answer"],
+        critique_notes="Audit passed with calibrated answers.",
+        flagged_grey_zone_conflict=False,
+    )
+
     with patch("orchestrator.understand_query") as mock_understand, \
          patch("orchestrator.IntakeSession") as MockIntakeSession, \
          patch("orchestrator.answer_question") as mock_qa, \
          patch("orchestrator.verify_citations") as mock_verify, \
          patch("orchestrator.retrieve") as mock_retrieve, \
-         patch("orchestrator.run_debate") as mock_run_debate:
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic:
 
         mock_understand.return_value = {
             "domain": "Consumer Protection",
@@ -118,9 +126,6 @@ def test_full_multi_turn_flow():
         }
 
         mock_intake = MockIntakeSession.return_value
-        # 1st call (during start()): returns first question
-        # 2nd call (during 1st answer_question): returns second question
-        # 3rd call (during 2nd answer_question): returns None (complete)
         mock_intake.next_question.side_effect = [
             {"field_key": "what_went_wrong", "question_text": "What went wrong with the laptop?"},
             {"field_key": "amount_paid", "question_text": "How much did you pay for the laptop?"},
@@ -141,6 +146,7 @@ def test_full_multi_turn_flow():
         mock_verify.return_value = mock_verification
         mock_retrieve.return_value = mock_debate_chunks
         mock_run_debate.return_value = mock_debate_result
+        mock_critic.return_value = mock_critic_result
 
         # Step 1: Citizen starts interaction
         res1 = session.start("I bought a laptop and have a defect issue.")
@@ -197,7 +203,17 @@ def test_full_multi_turn_flow():
         assert res3["debate"]["is_grey_zone"] is True
         assert res3["debate"]["judge_summary"] == mock_debate_result.judge_summary
 
-    print("  Test 2 passed: full multi-turn intake flow to complete QA, verification, and debate.")
+        # Confirm critic was called with (case_brief, verification, debate_result)
+        mock_critic.assert_called_once_with(
+            mock_intake.to_case_brief.return_value,
+            mock_verification,
+            mock_debate_result,
+        )
+        assert res3["critic"] is not None
+        assert res3.critic == mock_critic_result
+        assert res3["critic"]["approved"] is True
+
+    print("  Test 2 passed: full multi-turn intake flow to complete QA, verification, debate, and critic.")
 
 
 def test_checklist_full_skips_straight_to_complete():
@@ -235,7 +251,8 @@ def test_checklist_full_skips_straight_to_complete():
          patch("orchestrator.answer_question") as mock_qa, \
          patch("orchestrator.verify_citations") as mock_verify, \
          patch("orchestrator.retrieve") as mock_retrieve, \
-         patch("orchestrator.run_debate") as mock_run_debate:
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic:
 
         mock_understand.return_value = {
             "domain": "Consumer Protection",
@@ -254,6 +271,7 @@ def test_checklist_full_skips_straight_to_complete():
         mock_verify.return_value = mock_verification
         mock_retrieve.return_value = []
         mock_run_debate.return_value = None
+        mock_critic.return_value = None
 
         result = session.start(
             "I bought a washing machine online 3 weeks ago for 18000 rupees from an online seller and it arrived with a cracked drum."
@@ -268,11 +286,12 @@ def test_checklist_full_skips_straight_to_complete():
         assert session.state == "complete"
         assert session.final_result == mock_verification
 
-        # Verification that QA and citation verification were called
+        # Verification that QA, citation verification, debate, and critic were called
         mock_qa.assert_called_once()
         mock_verify.assert_called_once()
         mock_retrieve.assert_called_once()
         mock_run_debate.assert_called_once()
+        mock_critic.assert_called_once()
 
     print("  Test 3 passed: checklist full skips straight to complete stage.")
 
@@ -304,7 +323,8 @@ def test_final_check_gap_surfaced_once():
          patch("orchestrator.answer_question") as mock_qa, \
          patch("orchestrator.verify_citations") as mock_verify, \
          patch("orchestrator.retrieve") as mock_retrieve, \
-         patch("orchestrator.run_debate") as mock_run_debate:
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic:
 
         mock_understand.return_value = {
             "domain": "Consumer Protection",
@@ -328,6 +348,7 @@ def test_final_check_gap_surfaced_once():
         mock_verify.return_value = mock_verification
         mock_retrieve.return_value = []
         mock_run_debate.return_value = None
+        mock_critic.return_value = None
 
         # Start session
         r1 = session.start("Bought refrigerator")
@@ -347,11 +368,12 @@ def test_final_check_gap_surfaced_once():
         assert r3["verified"] is True
         assert r3["final_answer"] == mock_verification["final_answer"]
         assert session.state == "complete"
-        # Verify QA and verification were run on proceed
+        # Verify QA, verification, debate, and critic were run on proceed
         mock_qa.assert_called_once()
         mock_verify.assert_called_once()
         mock_retrieve.assert_called_once()
         mock_run_debate.assert_called_once()
+        mock_critic.assert_called_once()
         # Verify run_final_check was only called once
         assert mock_intake.run_final_check.call_count == 1
 
@@ -453,12 +475,20 @@ def test_debate_exception_does_not_crash_orchestrator():
         for i in range(DEBATE_RETRIEVAL_TOP_K)
     ]
 
+    mock_critic_result = CriticResult(
+        approved=True,
+        final_answer=mock_verification["final_answer"],
+        critique_notes="Critic completed without debate.",
+        flagged_grey_zone_conflict=False,
+    )
+
     with patch("orchestrator.understand_query") as mock_understand, \
          patch("orchestrator.IntakeSession") as MockIntakeSession, \
          patch("orchestrator.answer_question") as mock_qa, \
          patch("orchestrator.verify_citations") as mock_verify, \
          patch("orchestrator.retrieve") as mock_retrieve, \
-         patch("orchestrator.run_debate") as mock_run_debate:
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic:
 
         mock_understand.return_value = {
             "domain": "Consumer Protection",
@@ -475,6 +505,7 @@ def test_debate_exception_does_not_crash_orchestrator():
         mock_qa.return_value = mock_qa_result
         mock_verify.return_value = mock_verification
         mock_retrieve.return_value = wider_chunks
+        mock_critic.return_value = mock_critic_result
 
         # Simulate a Gemini API quota / rate-limit failure in debate
         mock_run_debate.side_effect = RuntimeError("ResourceExhausted: 429 Resource has been exhausted (e.g. check quota).")
@@ -490,13 +521,104 @@ def test_debate_exception_does_not_crash_orchestrator():
         assert result["rejected_sections"] == []
         assert result["debate"] is None
         assert result.debate is None
+        assert result["critic"] is not None
+        assert result.critic == mock_critic_result
         assert session.state == "complete"
         assert session.final_result == mock_verification
 
         mock_run_debate.assert_called_once()
         mock_verify.assert_called_once()
+        # Critic must still be called even when debate resulted in None
+        mock_critic.assert_called_once_with(
+            mock_intake.to_case_brief.return_value,
+            mock_verification,
+            None,
+        )
 
     print("  Test 5 passed: debate exception handled gracefully without crashing orchestrator.")
+
+
+def test_critic_exception_does_not_crash_orchestrator():
+    """
+    (6) If run_final_critique raises an exception (e.g. Gemini quota limit / API failure),
+    the orchestrator catches it specifically, logs a warning, and sets critic=None on
+    the final OrchestratorStageResult without crashing the pipeline. The underlying
+    verified answer remains completely intact.
+    """
+    session = CaseSession()
+
+    mock_qa_result = {
+        "answer": "Under Section 35, you may file a complaint.",
+        "cited_sections": ["35"],
+        "status": "answered",
+        "retrieved_chunks": [{"metadata": {"section": "35"}, "text": "Section 35 text"}],
+    }
+
+    mock_verification = {
+        "verified": True,
+        "verified_sections": ["35"],
+        "rejected_sections": [],
+        "details": {},
+        "final_answer": "Under Section 35, you may file a complaint.",
+    }
+
+    wider_chunks = [
+        {"id": f"chunk_{i}", "text": f"text {i}", "metadata": {"section": str(i)}}
+        for i in range(DEBATE_RETRIEVAL_TOP_K)
+    ]
+
+    mock_debate_result = DebateResult(
+        is_grey_zone=False,
+        judge_summary="Clear right.",
+    )
+
+    with patch("orchestrator.understand_query") as mock_understand, \
+         patch("orchestrator.IntakeSession") as MockIntakeSession, \
+         patch("orchestrator.answer_question") as mock_qa, \
+         patch("orchestrator.verify_citations") as mock_verify, \
+         patch("orchestrator.retrieve") as mock_retrieve, \
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic:
+
+        mock_understand.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Laptop"},
+        }
+        mock_intake = MockIntakeSession.return_value
+        mock_intake.next_question.return_value = None
+        mock_intake.run_final_check.return_value = None
+        mock_intake.to_case_brief.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Laptop"},
+            "ready": True,
+        }
+        mock_qa.return_value = mock_qa_result
+        mock_verify.return_value = mock_verification
+        mock_retrieve.return_value = wider_chunks
+        mock_run_debate.return_value = mock_debate_result
+
+        # Simulate a Gemini API quota error in critic
+        mock_critic.side_effect = RuntimeError("ResourceExhausted: 429 Critic LLM quota exhausted.")
+
+        result = session.start("My laptop is completely broken.")
+
+        # Pipeline must complete successfully despite critic failure
+        assert result["stage"] == "complete"
+        assert result.stage == "complete"
+        assert result["verified"] is True
+        assert result["final_answer"] == mock_verification["final_answer"]
+        assert result["verified_sections"] == ["35"]
+        assert result["rejected_sections"] == []
+        assert result["debate"] == mock_debate_result
+        assert result["critic"] is None
+        assert result.critic is None
+        assert session.state == "complete"
+        assert session.final_result == mock_verification
+
+        mock_critic.assert_called_once()
+        mock_verify.assert_called_once()
+
+    print("  Test 6 passed: critic exception handled gracefully without crashing orchestrator.")
 
 
 if __name__ == "__main__":
@@ -506,6 +628,7 @@ if __name__ == "__main__":
     test_checklist_full_skips_straight_to_complete()
     test_final_check_gap_surfaced_once()
     test_debate_exception_does_not_crash_orchestrator()
+    test_critic_exception_does_not_crash_orchestrator()
     test_answer_question_without_start_raises()
     test_message_length_limit_enforced()
     print("\nAll CaseSession Orchestrator tests passed successfully!")
