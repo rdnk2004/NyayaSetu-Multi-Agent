@@ -92,6 +92,15 @@ def run_orchestrator_validation():
             print(f"Rejected statutory sections       : {step_result.get('rejected_sections')}")
             print("\nFinal Grounded Legal Advice:\n")
             print(step_result.get("final_answer"))
+            print("-" * 70)
+            debate = step_result.get("debate")
+            if debate:
+                print("Debate Mechanism Adjudication:")
+                print(f"  Is Grey Zone           : {debate.get('is_grey_zone')}")
+                print(f"  Clearly Supported Side : {debate.get('clearly_supported_side')}")
+                print(f"  Judge Summary          : {debate.get('judge_summary')}")
+            else:
+                print("Debate Mechanism: None")
             print("=" * 70)
             break
 

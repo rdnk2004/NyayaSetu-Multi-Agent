@@ -152,3 +152,4 @@ class OrchestratorStageResult(NyayaSetuModel):
     final_answer: str | None = None
     verified_sections: list[str] = Field(default_factory=list)
     rejected_sections: list[str] = Field(default_factory=list)
+    debate: DebateResult | None = None
