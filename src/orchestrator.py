@@ -7,6 +7,7 @@ multi-turn state machine:
   2. Intelligent Intake (multi-turn checklist-based Q&A until facts complete)
   3. Retrieval & Grounded QA (retrieve relevant statutory chunks -> answer)
   4. Citation Verification (audit citations against chunks and LLM support)
+  5. Debate Mechanism (adversarial statutory arguments & grey-zone adjudication)
 
 The caller (e.g. API layer or UI) drives the session turn-by-turn via:
   - session.start(first_message)
@@ -17,12 +18,14 @@ The caller (e.g. API layer or UI) drives the session turn-by-turn via:
 import logging
 from typing import Any
 
-from config import MAX_MESSAGE_LENGTH
+from config import MAX_MESSAGE_LENGTH, DEBATE_RETRIEVAL_TOP_K
 from query_understanding import understand_query
 from intake_agent import IntakeSession
-from qa_agent import answer_question as qa_answer_question
+from qa_agent import answer_question as qa_answer_question, _build_query_from_facts
 from citation_verification_agent import verify_citations
-from models import OrchestratorStageResult
+from retrieve import retrieve
+from debate_mechanism import run_debate
+from models import CaseBrief, OrchestratorStageResult, DebateResult
 
 logger = logging.getLogger(__name__)
 
@@ -162,10 +165,26 @@ class CaseSession:
         self.final_result = verification
         self.state = "complete"
 
+        # Stage 5: Debate Mechanism (Adversarial Statutory Argumentation & Grey-Zone Adjudication)
+        # Debate runs after Citation Verification (even on verification fallback),
+        # using its OWN retrieval call with wider context window (DEBATE_RETRIEVAL_TOP_K).
+        debate_result: DebateResult | None = None
+        try:
+            facts = case_brief.get("facts", {}) if isinstance(case_brief, (dict, CaseBrief)) else {}
+            if not isinstance(facts, dict):
+                facts = {}
+            debate_query = _build_query_from_facts(facts)
+            debate_chunks = retrieve(debate_query, top_k=DEBATE_RETRIEVAL_TOP_K)
+            debate_result = run_debate(case_brief, debate_chunks)
+        except Exception as e:
+            logger.warning("Debate mechanism step failed: %s. Proceeding with debate=None.", e, exc_info=True)
+            debate_result = None
+
         return OrchestratorStageResult(
             stage="complete",
             verified=verification["verified"],
             final_answer=verification["final_answer"],
             verified_sections=verification["verified_sections"],
             rejected_sections=verification["rejected_sections"],
-        )
+            debate=debate_result,
+        )

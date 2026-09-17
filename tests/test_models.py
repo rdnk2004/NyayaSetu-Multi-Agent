@@ -142,6 +142,21 @@ def test_orchestrator_stage_result_model():
     assert s3["final_answer"] == "Answer here"
     assert s3["verified_sections"] == ["35"]
     assert s3["rejected_sections"] == []
+    assert s3.debate is None
+    assert s3["debate"] is None
+
+    # Complete stage with populated debate
+    d = DebateResult(is_grey_zone=True, judge_summary="Genuine dispute between provisions.")
+    s4 = OrchestratorStageResult(
+        stage="complete",
+        verified=True,
+        final_answer="Answer here",
+        debate=d,
+    )
+    assert s4.debate is not None
+    assert s4.debate.is_grey_zone is True
+    assert s4["debate"]["is_grey_zone"] is True
+    assert s4["debate"]["judge_summary"] == "Genuine dispute between provisions."
 
 
 if __name__ == "__main__":
