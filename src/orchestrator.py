@@ -8,6 +8,7 @@ multi-turn state machine:
   3. Retrieval & Grounded QA (retrieve relevant statutory chunks -> answer)
   4. Citation Verification (audit citations against chunks and LLM support)
   5. Debate Mechanism (adversarial statutory arguments & grey-zone adjudication)
+  6. Critic Agent (final quality re-verification & calibration pass)
 
 The caller (e.g. API layer or UI) drives the session turn-by-turn via:
   - session.start(first_message)
@@ -25,13 +26,15 @@ from qa_agent import answer_question as qa_answer_question, _build_query_from_fa
 from citation_verification_agent import verify_citations
 from retrieve import retrieve
 from debate_mechanism import run_debate
-from models import CaseBrief, OrchestratorStageResult, DebateResult
+from critic_agent import run_final_critique
+from models import CaseBrief, OrchestratorStageResult, DebateResult, CriticResult
 
 logger = logging.getLogger(__name__)
 
 # Module-level aliases to support both qa_answer_question and answer_question in tests/patches
 qa_agent_answer = qa_answer_question
 answer_question = qa_answer_question
+critic_agent_critique = run_final_critique
 
 
 class CaseSession:
@@ -180,11 +183,27 @@ class CaseSession:
             logger.warning("Debate mechanism step failed: %s. Proceeding with debate=None.", e, exc_info=True)
             debate_result = None
 
+        # Stage 6: Critic Agent (Final Re-Verification & Quality Pass)
+        # Runs after debate (whether debate succeeded or fell back to None).
+        critic_result: CriticResult | None = None
+        try:
+            critic_result = run_final_critique(case_brief, verification, debate_result)
+        except Exception as e:
+            logger.warning("Critic agent step failed: %s. Proceeding with critic=None.", e, exc_info=True)
+            critic_result = None
+
+        final_answer = (
+            critic_result.final_answer
+            if (critic_result and critic_result.final_answer)
+            else verification["final_answer"]
+        )
+
         return OrchestratorStageResult(
             stage="complete",
             verified=verification["verified"],
-            final_answer=verification["final_answer"],
+            final_answer=final_answer,
             verified_sections=verification["verified_sections"],
             rejected_sections=verification["rejected_sections"],
             debate=debate_result,
+            critic=critic_result,
         )
