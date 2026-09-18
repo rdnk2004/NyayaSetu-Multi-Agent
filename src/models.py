@@ -164,3 +164,4 @@ class OrchestratorStageResult(NyayaSetuModel):
     rejected_sections: list[str] = Field(default_factory=list)
     debate: DebateResult | None = None
     critic: CriticResult | None = None
+    critic_revision_discarded: bool = False

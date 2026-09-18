@@ -20,6 +20,8 @@ import citation_verification_agent
 import llm_client
 from citation_verification_agent import (
     verify_citations,
+    reverify_answer_citations,
+    extract_cited_sections,
     UNVERIFIED_FALLBACK_ANSWER,
 )
 
@@ -447,6 +449,75 @@ def test_as_of_date_selection_and_graceful_missing():
     print("  Test 10 passed: Most recent as_of_date selected, missing dates handled gracefully.")
 
 
+def test_extract_cited_sections_various_phrasings():
+    """extract_cited_sections() picks up single, comma-joined, 'and'-joined, and sub-clause mentions."""
+    assert extract_cited_sections(
+        "Under Section 83 you have rights. Section 84 and Section 86 also apply. "
+        "See Section 39(1) for remedies."
+    ) == ["83", "84", "86", "39(1)"]
+    assert extract_cited_sections("Under Sections 82, 83 you may act.") == ["82", "83"]
+    assert extract_cited_sections("Section 86(e) is relevant, as is Section 87(3).") == ["86(e)", "87(3)"]
+    assert extract_cited_sections("No sections here at all.") == []
+    print("  Test 11 passed: extract_cited_sections handles realistic Critic-answer phrasing.")
+
+
+def test_reverify_answer_citations_catches_unverified_critic_addition():
+    """
+    Regression test for Known Issue #10: the Critic Agent can weave in a section
+    number (typically surfaced by the Debate Mechanism's wider-top_k retrieval)
+    that was never audited by Citation Verification. reverify_answer_citations()
+    must catch this - i.e. NOT report `verified=True` when the Critic's text
+    cites a section absent from the chunk pool it's checked against.
+    """
+    critic_answer = (
+        "Under Section 83 you may claim relief. However Section 84 governs whether "
+        "the defect is a manufacturing defect. (This answer reflects the Act as of 2026-08-06.)"
+    )
+    # Only Section 83 was actually retrieved/available - Section 84 is absent,
+    # simulating it having only ever surfaced via the Debate Mechanism's separate
+    # top_k=8 retrieval pool, never checked by Citation Verification.
+    chunks_missing_84 = [
+        {"id": "c1", "text": "Section 83 text about liability...", "metadata": {"section": "83"}},
+    ]
+
+    with patch("citation_verification_agent.call_llm_structured") as mock_llm:
+        result = reverify_answer_citations(critic_answer, chunks_missing_84)
+        # LLM support-check should only ever be reached for Section 83 (the one
+        # actually retrieved); Section 84 is rejected before any LLM call.
+        assert mock_llm.call_count <= 1
+
+    assert result["verified"] is False
+    assert "84" in result["rejected_sections"]
+    print("  Test 12 passed: reverify_answer_citations rejects a Critic-introduced, never-retrieved section.")
+
+
+def test_reverify_answer_citations_passes_when_fully_grounded():
+    """
+    When every section the Critic's revised text cites IS present in the
+    (combined QA + Debate) chunk pool and LLM-supported, reverification
+    succeeds and the Critic's text is delivered unchanged (no duplicate
+    as_of_date trailer appended).
+    """
+    critic_answer = (
+        "Under Section 83 you may claim relief, and Section 84 governs whether "
+        "the defect qualifies. (This answer reflects the Act as of 2026-08-06.)"
+    )
+    chunks_with_84 = [
+        {"id": "c1", "text": "Section 83 text about liability...", "metadata": {"section": "83"}},
+        {"id": "c2", "text": "Section 84 text about manufacturing defects...", "metadata": {"section": "84"}},
+    ]
+    mock_llm_response = json.dumps({"is_supported": True, "reason": "Text supports the claim."})
+
+    with patch("citation_verification_agent.call_llm_structured", return_value=mock_llm_response):
+        result = reverify_answer_citations(critic_answer, chunks_with_84)
+
+    assert result["verified"] is True
+    assert set(result["verified_sections"]) == {"83", "84"}
+    # Delivered text is exactly the Critic's answer - no second as_of_date trailer appended.
+    assert result["final_answer"] == critic_answer
+    print("  Test 13 passed: reverify_answer_citations passes through a fully-grounded Critic revision unchanged.")
+
+
 if __name__ == "__main__":
     print("\nRunning Citation Verification Agent Tests:")
     test_all_citations_verified()
@@ -459,5 +530,7 @@ if __name__ == "__main__":
     test_empty_citations_not_verified()
     test_citation_granularity_matching()
     test_as_of_date_selection_and_graceful_missing()
+    test_extract_cited_sections_various_phrasings()
+    test_reverify_answer_citations_catches_unverified_critic_addition()
+    test_reverify_answer_citations_passes_when_fully_grounded()
     print("\nAll Citation Verification Agent tests passed successfully!")
-

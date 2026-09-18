@@ -33,7 +33,7 @@ The system is a pipeline of 10 specialized agents, each with a narrow job:
 | 7 | Document-Drafting Agent | ⬜ Not started |
 | 8 | Risk / Escalation Agent | ⬜ Not started |
 | 9 | Plain-Language Explainer Agent | ⬜ Not started |
-| 10 | Adversarial Critic Agent | ⬜ Not started |
+| 10 | Adversarial Critic Agent | ✅ Built — **validated** |
 
 **"Skeleton" vs "validated"** — an important distinction, not a
 formality: *skeleton* means the code's logic is correct and covered by
@@ -46,7 +46,7 @@ appears in the source text, not invented).
 **Infrastructure, not one of the 10 agents:**
 - **Pipeline Orchestrator** (`orchestrator.py`) — a resumable,
   multi-turn state machine wiring Query Understanding → Intake →
-  Retrieval → QA → Citation Verification into one flow.
+  Retrieval → QA → Citation Verification → Debate Mechanism → Critic Agent into one flow.
 - **QA Agent** (`qa_agent.py`) — a scaffolding module bridging
   Retrieval and Citation Verification before the Explainer Agent
   exists to take over final answer delivery.
@@ -107,6 +107,22 @@ API calls, real data — not code review alone:
    sections on separate live calls. See the Evaluation Methodology
    note below — this is why single-run deltas should never be trusted
    to attribute cause to a code change.
+6. **Critic Agent introducing unverified citations from Debate context (Known Issue #10).**
+   During real-API testing of the full pipeline (`scripts/validate_critic_real.py`),
+   the Adversarial Critic Agent rewrote a verified answer to soften it in light of
+   the Adversarial Debate Mechanism's grey-zone findings. In doing so, it wove in
+   a statutory section (e.g., Section 84) that had only ever surfaced in the
+   Debate Mechanism's wider-context retrieval (`top_k=8`), which never previously
+   passed through Citation Verification. This broke the core invariant that no
+   legal citation reaches the citizen without verification.
+   Fixed by adding `reverify_answer_citations()` in `citation_verification_agent.py`
+   to re-audit any Critic-revised answer against the unified pool of retrieved
+   chunks (QA Agent chunks + Debate Mechanism chunks). If the Critic introduces a
+   section absent from the chunk pool or unsupported by the text, the
+   orchestrator fails safe: it automatically discards the Critic's revision,
+   delivers the pre-critic verified answer instead, and flags
+   `critic_revision_discarded=True` on `OrchestratorStageResult` for full
+   transparency and auditing.
 
 Diagnostic logging (`qa_agent.py`'s built-query log,
 `orchestrator.py`'s retrieved-chunks log) is routed through
@@ -175,6 +191,8 @@ PII into logs.
   treated as "verified" — it must actually ground at least one claim.
   Surfaces the source Act's most recent `as_of_date` among verified
   sections in the final answer. Logs every rejection with a reason.
+  Provides `reverify_answer_citations()` to re-audit downstream answer
+  revisions (such as from the Critic Agent) against combined chunk pools.
 
 **Adversarial Debate Mechanism (`debate_mechanism.py`, built and validated):**
 - Two grounded LLM calls argue opposing interpretations (plaintiff and
@@ -190,11 +208,25 @@ PII into logs.
   direct question-answering can hide the exact clause that resolves
   (or properly complicates) the ambiguity.
 
+**Adversarial Critic Agent (`critic_agent.py`, built and validated):**
+- Audits the assembled case brief, QA answer, citation verification result, and
+  debate adjudication to catch edge-case hallucinations, tone overconfidence, or
+  unaddressed grey zones before delivery.
+- Can approve the answer as-is or revise/soften it to reflect uncertainty.
+- Protected by a fail-safe re-verification gate (`reverify_answer_citations()`):
+  any revision the Critic produces is re-checked against the union of QA and
+  Debate retrieval chunks. If re-verification fails or encounters unverified sections,
+  the orchestrator safely discards the revision, delivers the pre-critic verified
+  answer, and sets `critic_revision_discarded=True` (see Resolved Issue #6 / Known Issue #10).
+
 **Orchestrator (`orchestrator.py`):**
 - Resumable multi-turn state machine: `start()` → `answer_question()`
-  loop → `proceed()` past an optional final-check gap → `"complete"`.
+  loop → `proceed()` past an optional final-check gap → QA → Citation
+  Verification → Debate Mechanism → Critic Agent → Critic Re-verification gate → `"complete"`.
 - Enforces a per-message length limit (`MAX_MESSAGE_LENGTH`, checked
   before any LLM call) to bound cost and prevent abuse.
+- Safely isolates exceptions in downstream analysis stages (Debate, Critic)
+  so transient LLM failures never crash the citizen's core session.
 
 **LLM client (`llm_client.py`):** Gemini API integration with real
 cost/safety guardrails — prompt caching, session call budget cap
@@ -210,13 +242,14 @@ fail-safe JSON parsing consistently across every agent.
   ingested and validated.
 - Second domain — not yet chosen / sourced.
 
-**Tests:** 69 tests across `test_intake_flow.py`,
+**Tests:** 82 tests across `test_intake_flow.py`,
 `test_llm_client_guards.py`, `test_qa_agent.py`,
 `test_citation_verification_agent.py`, `test_orchestrator.py`,
 `test_landmark_case_agent.py`, `test_debate_mechanism.py`,
-`test_chunk_text.py`, `test_config.py`, `test_models.py`,
-`test_pii_redaction.py`, `test_prompt_injection_resistance.py`,
-`test_retrieve.py` — all passing, enforced on every push/PR via CI.
+`test_critic_agent.py`, `test_chunk_text.py`, `test_config.py`,
+`test_models.py`, `test_pii_redaction.py`,
+`test_prompt_injection_resistance.py`, `test_retrieve.py`,
+`test_logging_config.py` — all passing, enforced on every push/PR via CI.
 
 ---
 
@@ -249,6 +282,7 @@ fail-safe JSON parsing consistently across every agent.
 │   ├── citation_verification_agent.py  # per-section citation cross-check
 │   ├── landmark_case_agent.py          # precedent retrieval + grounded explanation
 │   ├── debate_mechanism.py             # plaintiff/defense/judge grey-zone detection
+│   ├── critic_agent.py                 # adversarial audit & answer revision
 │   ├── orchestrator.py                 # end-to-end multi-turn state machine
 │   ├── llm_client.py                   # Gemini API wrapper + guardrails
 │   ├── config.py                       # centralized, .env-driven tunables
@@ -260,9 +294,10 @@ fail-safe JSON parsing consistently across every agent.
 │   ├── validate_orchestrator_real.py
 │   ├── validate_landmark_case_real.py
 │   ├── validate_debate_real.py
+│   ├── validate_critic_real.py
 │   ├── run_evaluation.py               # labeled-case benchmark, real API
 │   └── check_contamination.py
-├── tests/                              # 69 tests, see Progress so far
+├── tests/                              # 82 tests, see Progress so far
 ├── .env.example
 ├── requirements.txt
 └── README.md
@@ -323,6 +358,7 @@ python scripts/validate_real_llm.py
 python scripts/validate_orchestrator_real.py
 python scripts/validate_landmark_case_real.py
 python scripts/validate_debate_real.py
+python scripts/validate_critic_real.py
 python scripts/run_evaluation.py
 ```
 
@@ -386,9 +422,8 @@ against the source since the section-parsing logic is a heuristic
 tuned on one Act's formatting.
 
 **Remaining agents:** Document-Drafting Agent, Risk/Escalation Agent,
-Plain-Language Explainer Agent, Adversarial Critic Agent (the last of
-these audits the *combined* pipeline output, so it's a natural
-capstone once the others exist).
+Plain-Language Explainer Agent (Adversarial Critic Agent is built,
+integrated into the orchestrator, and validated).
 
 **Evaluation depth:** the current 20-case labeled set covers one
 domain; expanding it once domain 2 exists, and running the

@@ -23,7 +23,7 @@ from config import MAX_MESSAGE_LENGTH, DEBATE_RETRIEVAL_TOP_K
 from query_understanding import understand_query
 from intake_agent import IntakeSession
 from qa_agent import answer_question as qa_answer_question, _build_query_from_facts
-from citation_verification_agent import verify_citations
+from citation_verification_agent import verify_citations, reverify_answer_citations
 from retrieve import retrieve
 from debate_mechanism import run_debate
 from critic_agent import run_final_critique
@@ -172,6 +172,7 @@ class CaseSession:
         # Debate runs after Citation Verification (even on verification fallback),
         # using its OWN retrieval call with wider context window (DEBATE_RETRIEVAL_TOP_K).
         debate_result: DebateResult | None = None
+        debate_chunks: list[dict[str, Any]] = []
         try:
             facts = case_brief.get("facts", {}) if isinstance(case_brief, (dict, CaseBrief)) else {}
             if not isinstance(facts, dict):
@@ -182,6 +183,7 @@ class CaseSession:
         except Exception as e:
             logger.warning("Debate mechanism step failed: %s. Proceeding with debate=None.", e, exc_info=True)
             debate_result = None
+            debate_chunks = []
 
         # Stage 6: Critic Agent (Final Re-Verification & Quality Pass)
         # Runs after debate (whether debate succeeded or fell back to None).
@@ -192,18 +194,74 @@ class CaseSession:
             logger.warning("Critic agent step failed: %s. Proceeding with critic=None.", e, exc_info=True)
             critic_result = None
 
-        final_answer = (
-            critic_result.final_answer
-            if (critic_result and critic_result.final_answer)
-            else verification["final_answer"]
+        # Default: no critic revision, deliver the already-verified answer as-is.
+        final_answer = verification["final_answer"]
+        final_verified_sections = verification["verified_sections"]
+        final_rejected_sections = verification["rejected_sections"]
+        critic_revision_discarded = False
+
+        critic_revised_text = bool(
+            critic_result
+            and critic_result.final_answer
+            and critic_result.final_answer.strip() != verification["final_answer"].strip()
         )
+
+        if critic_revised_text:
+            # The Critic rewrote the verified answer - typically to weave in
+            # context from the Debate Mechanism's wider (top_k=DEBATE_RETRIEVAL_TOP_K)
+            # retrieval, which never itself passes through Citation Verification.
+            # Re-audit the Critic's actual text before letting it reach the citizen,
+            # against the UNION of both retrieval passes, so a citation introduced
+            # from the Debate's context gets checked exactly like anything the QA
+            # Agent originally cited (see Known Issue #10).
+            combined_chunks = list(retrieved_chunks)
+            seen_chunk_keys = {
+                (c.get("metadata", {}).get("section", ""), c.get("text", "")) for c in retrieved_chunks
+            }
+            for chunk in debate_chunks:
+                key = (chunk.get("metadata", {}).get("section", ""), chunk.get("text", ""))
+                if key not in seen_chunk_keys:
+                    combined_chunks.append(chunk)
+                    seen_chunk_keys.add(key)
+
+            try:
+                reverification = reverify_answer_citations(critic_result.final_answer, combined_chunks)
+            except Exception as e:
+                logger.warning(
+                    "Re-verification of Critic's revised answer failed: %s. "
+                    "Failing safe by discarding the Critic's revision.",
+                    e,
+                    exc_info=True,
+                )
+                reverification = None
+
+            if reverification is not None and reverification.verified:
+                final_answer = reverification.final_answer
+                final_verified_sections = reverification.verified_sections
+                final_rejected_sections = reverification.rejected_sections
+            else:
+                # Fail-safe: the Critic's revision introduced (or we couldn't confirm
+                # it didn't introduce) a citation that isn't actually grounded in
+                # retrieved text. Never deliver an unaudited claim - fall back to the
+                # pre-critic, already-verified answer instead, and say so explicitly
+                # rather than silently swallowing the discrepancy.
+                logger.warning(
+                    "Critic's revised answer failed re-verification (unverified sections: %s). "
+                    "Discarding revision and delivering the pre-critic verified answer instead.",
+                    reverification.rejected_sections if reverification else "unknown",
+                )
+                final_answer = verification["final_answer"]
+                final_verified_sections = verification["verified_sections"]
+                final_rejected_sections = verification["rejected_sections"]
+                critic_revision_discarded = True
 
         return OrchestratorStageResult(
             stage="complete",
             verified=verification["verified"],
             final_answer=final_answer,
-            verified_sections=verification["verified_sections"],
-            rejected_sections=verification["rejected_sections"],
+            verified_sections=final_verified_sections,
+            rejected_sections=final_rejected_sections,
             debate=debate_result,
             critic=critic_result,
+            critic_revision_discarded=critic_revision_discarded,
         )

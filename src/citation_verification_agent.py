@@ -151,29 +151,51 @@ def _check_section_support(section: str, section_text: str, answer: str) -> tupl
     return is_supported, reason
 
 
-def verify_citations(
-    qa_result: QAResult | dict[str, Any],
+_SECTION_MENTION_RE = re.compile(
+    r"(?i)section[s]?\s+"
+    r"(\d+[A-Za-z]?(?:\(\d+\))?(?:\([a-z]+\))?"
+    r"(?:\s*,\s*\d+[A-Za-z]?(?:\(\d+\))?(?:\([a-z]+\))?)*"
+    r"(?:\s+and\s+\d+[A-Za-z]?(?:\(\d+\))?(?:\([a-z]+\))?)?)"
+)
+
+
+def extract_cited_sections(text: str) -> list[str]:
+    """
+    Extract the section numbers a piece of free text (e.g. a Critic-revised
+    answer) actually cites, by scanning for "Section X" / "Sections X, Y and Z"
+    mentions.
+
+    This is inherently a heuristic (regex over prose, not a structured field
+    the way QAResult.cited_sections is) - used only to figure out what needs
+    re-auditing when an agent downstream of Citation Verification (i.e. the
+    Critic) has rewritten the answer text freely.
+    """
+    if not text:
+        return []
+
+    found: list[str] = []
+    for match in _SECTION_MENTION_RE.finditer(text):
+        group = match.group(1)
+        # Split multi-section mentions like "82, 83" or "84 and 86"
+        parts = re.split(r"\s*,\s*|\s+and\s+", group)
+        for part in parts:
+            sec = part.strip()
+            if sec and sec not in found:
+                found.append(sec)
+    return found
+
+
+def _verify_sections_against_chunks(
+    answer: str,
+    cited_sections: list[str],
     retrieved_chunks: list[dict[str, Any]],
 ) -> CitationVerificationResult:
     """
-    Verify all citations in the QA Agent's result against retrieved chunks.
-
-    Args:
-        qa_result: Output from QA Agent ({"answer": str, "cited_sections": list[str], "status": str})
-        retrieved_chunks: List of chunk dicts from retrieve() (each with 'metadata' and 'text')
-
-    Returns:
-        CitationVerificationResult: {
-            "verified": bool,
-            "verified_sections": list[str],
-            "rejected_sections": list[str],
-            "details": dict[str, dict[str, Any]],
-            "final_answer": str
-        }
+    Shared core: audit `cited_sections` against `retrieved_chunks` and decide
+    whether `answer` is fully grounded. Used by both verify_citations()
+    (QA Agent's structured citation list) and reverify_answer_citations()
+    (free-text re-audit of a Critic-revised answer).
     """
-    answer = qa_result.get("answer", "")
-    cited_sections = qa_result.get("cited_sections", [])
-
     if not cited_sections:
         logger.warning("Citation verification: answer has no cited sections to verify.")
         return CitationVerificationResult(
@@ -181,7 +203,7 @@ def verify_citations(
             verified_sections=[],
             rejected_sections=[],
             details={},
-            final_answer=answer if qa_result.get("status") == "unclear" else UNVERIFIED_FALLBACK_ANSWER,
+            final_answer=UNVERIFIED_FALLBACK_ANSWER,
         )
 
     verified_sections: list[str] = []
@@ -286,3 +308,87 @@ def verify_citations(
         final_answer=final_answer,
     )
 
+
+def verify_citations(
+    qa_result: QAResult | dict[str, Any],
+    retrieved_chunks: list[dict[str, Any]],
+) -> CitationVerificationResult:
+    """
+    Verify all citations in the QA Agent's result against retrieved chunks.
+
+    Args:
+        qa_result: Output from QA Agent ({"answer": str, "cited_sections": list[str], "status": str})
+        retrieved_chunks: List of chunk dicts from retrieve() (each with 'metadata' and 'text')
+
+    Returns:
+        CitationVerificationResult: {
+            "verified": bool,
+            "verified_sections": list[str],
+            "rejected_sections": list[str],
+            "details": dict[str, dict[str, Any]],
+            "final_answer": str
+        }
+    """
+    answer = qa_result.get("answer", "")
+    cited_sections = qa_result.get("cited_sections", [])
+
+    if not cited_sections:
+        logger.warning("Citation verification: answer has no cited sections to verify.")
+        return CitationVerificationResult(
+            verified=False,
+            verified_sections=[],
+            rejected_sections=[],
+            details={},
+            final_answer=answer if qa_result.get("status") == "unclear" else UNVERIFIED_FALLBACK_ANSWER,
+        )
+
+    return _verify_sections_against_chunks(answer, cited_sections, retrieved_chunks)
+
+
+def reverify_answer_citations(
+    answer: str,
+    retrieved_chunks: list[dict[str, Any]],
+) -> CitationVerificationResult:
+    """
+    Re-audit a piece of free text (e.g. the Critic Agent's revised final_answer)
+    against a pool of retrieved chunks, using the same per-section retrieval-match
+    + LLM-support-check logic as verify_citations().
+
+    Unlike verify_citations(), there is no structured `cited_sections` list to
+    work from - the Critic returns prose, not a QAResult. So this first extracts
+    which section numbers the text actually cites (extract_cited_sections), then
+    runs the same audit against them.
+
+    Intended use: after the Critic Agent revises an already-verified answer
+    (typically by weaving in context from the Debate Mechanism's wider-top_k
+    retrieval, which never itself passes through Citation Verification), call
+    this on the Critic's final_answer against the UNION of the QA Agent's and
+    Debate Mechanism's retrieved chunks, so any section the Critic introduced
+    gets the same audit as everything the QA Agent originally cited - closing
+    the gap where a Critic-introduced citation could reach the citizen without
+    ever being checked (see Known Issue #10).
+    """
+    cited_sections = extract_cited_sections(answer)
+
+    if not cited_sections:
+        # Critic's revision cites no section numbers at all - nothing to audit,
+        # and nothing to reject; the caller decides what "no citations" means here.
+        return CitationVerificationResult(
+            verified=False,
+            verified_sections=[],
+            rejected_sections=[],
+            details={},
+            final_answer=answer,
+        )
+
+    result = _verify_sections_against_chunks(answer, cited_sections, retrieved_chunks)
+
+    # The Critic's answer text (unlike the QA Agent's raw answer) already carries
+    # its own "(This answer reflects ... as of ...)" trailer, inherited verbatim
+    # from the pre-critic verified answer it was asked to revise. Don't let the
+    # shared helper tack on a second one - if this passed verification, deliver
+    # the Critic's text exactly as written.
+    if result.verified:
+        result.final_answer = answer
+
+    return result
