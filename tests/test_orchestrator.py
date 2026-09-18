@@ -17,6 +17,7 @@ or:
   pytest tests/test_orchestrator.py
 """
 
+import json
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -621,6 +622,188 @@ def test_critic_exception_does_not_crash_orchestrator():
     print("  Test 6 passed: critic exception handled gracefully without crashing orchestrator.")
 
 
+def test_critic_revision_with_unverified_citation_is_discarded():
+    """
+    (7) Regression test for Known Issue #10 (real-API run confirmed 2/3 times via
+    validate_critic_real.py): the Critic Agent can rewrite the verified answer to
+    weave in a section number (here, "84") that was never checked by Citation
+    Verification - typically because it only ever surfaced via the Debate
+    Mechanism's separate, wider-top_k retrieval. The orchestrator must catch this
+    via reverify_answer_citations() and fail safe by discarding the Critic's
+    revision, delivering the pre-critic verified answer instead, and reporting
+    critic_revision_discarded=True rather than silently letting the unaudited
+    citation reach the citizen.
+    """
+    session = CaseSession()
+
+    mock_qa_result = {
+        "answer": "Under Section 83, you may claim relief.",
+        "cited_sections": ["83"],
+        "status": "answered",
+        "retrieved_chunks": [{"metadata": {"section": "83"}, "text": "Section 83 text about liability."}],
+    }
+
+    mock_verification = {
+        "verified": True,
+        "verified_sections": ["83"],
+        "rejected_sections": [],
+        "details": {},
+        "final_answer": "Under Section 83, you may claim relief. (This answer reflects the Act as of 2026-08-06.)",
+    }
+
+    # Debate's wider retrieval surfaces Section 84 - but it is NEVER passed
+    # through Citation Verification, matching the real bug's root cause.
+    wider_chunks = [
+        {"id": "chunk_84", "text": "Section 84 text about manufacturing defects.", "metadata": {"section": "84"}},
+    ]
+
+    mock_debate_result = DebateResult(
+        is_grey_zone=True,
+        judge_summary="Whether Section 84 (manufacturing defect) applies is unsettled.",
+    )
+
+    # The Critic weaves the Debate's Section 84 reference into its revision -
+    # exactly what was observed in the real validate_critic_real.py runs.
+    mock_critic_result = CriticResult(
+        approved=False,
+        final_answer=(
+            "Under Section 83, you may claim relief, conditioned on proving the defect "
+            "under Section 84. (This answer reflects the Act as of 2026-08-06.)"
+        ),
+        critique_notes="Softened to reflect grey-zone uncertainty.",
+        flagged_grey_zone_conflict=True,
+    )
+
+    with patch("orchestrator.understand_query") as mock_understand, \
+         patch("orchestrator.IntakeSession") as MockIntakeSession, \
+         patch("orchestrator.answer_question") as mock_qa, \
+         patch("orchestrator.verify_citations") as mock_verify, \
+         patch("orchestrator.retrieve") as mock_retrieve, \
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic:
+
+        mock_understand.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Espresso machine"},
+        }
+        mock_intake = MockIntakeSession.return_value
+        mock_intake.next_question.return_value = None
+        mock_intake.run_final_check.return_value = None
+        mock_intake.to_case_brief.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Espresso machine"},
+            "ready": True,
+        }
+        mock_qa.return_value = mock_qa_result
+        mock_verify.return_value = mock_verification
+        mock_retrieve.return_value = wider_chunks
+        mock_run_debate.return_value = mock_debate_result
+        mock_critic.return_value = mock_critic_result
+
+        result = session.start("My espresso machine's boiler burst.")
+
+        assert result["stage"] == "complete"
+        # The Critic's revision must be discarded - the pre-critic, fully
+        # verified answer is delivered instead, and the discard is reported
+        # rather than silently swallowed.
+        assert result["final_answer"] == mock_verification["final_answer"]
+        assert "84" not in result["final_answer"]
+        assert result["verified_sections"] == ["83"]
+        assert result["critic_revision_discarded"] is True
+        assert result.critic_revision_discarded is True
+        # The raw critic result is still surfaced for audit/debugging purposes,
+        # even though its revision wasn't used as the delivered final_answer.
+        assert result["critic"] == mock_critic_result
+
+    print("  Test 7 passed: Critic revision with an unverified citation is discarded, pre-critic answer delivered.")
+
+
+def test_critic_revision_with_verified_citation_is_delivered():
+    """
+    (8) Counterpart to Test 7: when the Critic's revision cites ONLY sections
+    that re-verification confirms (against the combined QA + Debate chunk pool),
+    the revision IS delivered as final_answer, with verified_sections/rejected_sections
+    updated to reflect the freshly re-audited state - and critic_revision_discarded
+    stays False.
+    """
+    session = CaseSession()
+
+    mock_qa_result = {
+        "answer": "Under Section 83, you may claim relief.",
+        "cited_sections": ["83"],
+        "status": "answered",
+        "retrieved_chunks": [{"metadata": {"section": "83"}, "text": "Section 83 text about liability."}],
+    }
+
+    mock_verification = {
+        "verified": True,
+        "verified_sections": ["83"],
+        "rejected_sections": [],
+        "details": {},
+        "final_answer": "Under Section 83, you may claim relief. (This answer reflects the Act as of 2026-08-06.)",
+    }
+
+    # This time Section 84 IS genuinely present in the Debate's retrieval pool
+    # and will pass re-verification's LLM support check.
+    wider_chunks = [
+        {"id": "chunk_84", "text": "Section 84 text about manufacturing defects.", "metadata": {"section": "84"}},
+    ]
+
+    mock_debate_result = DebateResult(
+        is_grey_zone=True,
+        judge_summary="Whether Section 84 (manufacturing defect) applies is unsettled.",
+    )
+
+    critic_revised_answer = (
+        "Under Section 83, you may claim relief, conditioned on proving the defect "
+        "under Section 84. (This answer reflects the Act as of 2026-08-06.)"
+    )
+    mock_critic_result = CriticResult(
+        approved=False,
+        final_answer=critic_revised_answer,
+        critique_notes="Softened to reflect grey-zone uncertainty.",
+        flagged_grey_zone_conflict=True,
+    )
+
+    mock_reverify_response = json.dumps({"is_supported": True, "reason": "Text genuinely supports the claim."})
+
+    with patch("orchestrator.understand_query") as mock_understand, \
+         patch("orchestrator.IntakeSession") as MockIntakeSession, \
+         patch("orchestrator.answer_question") as mock_qa, \
+         patch("orchestrator.verify_citations") as mock_verify, \
+         patch("orchestrator.retrieve") as mock_retrieve, \
+         patch("orchestrator.run_debate") as mock_run_debate, \
+         patch("orchestrator.run_final_critique") as mock_critic, \
+         patch("citation_verification_agent.call_llm_structured", return_value=mock_reverify_response):
+
+        mock_understand.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Espresso machine"},
+        }
+        mock_intake = MockIntakeSession.return_value
+        mock_intake.next_question.return_value = None
+        mock_intake.run_final_check.return_value = None
+        mock_intake.to_case_brief.return_value = {
+            "domain": "Consumer Protection",
+            "facts": {"what_was_bought_or_hired": "Espresso machine"},
+            "ready": True,
+        }
+        mock_qa.return_value = mock_qa_result
+        mock_verify.return_value = mock_verification
+        mock_retrieve.return_value = wider_chunks
+        mock_run_debate.return_value = mock_debate_result
+        mock_critic.return_value = mock_critic_result
+
+        result = session.start("My espresso machine's boiler burst.")
+
+        assert result["stage"] == "complete"
+        assert result["final_answer"] == critic_revised_answer
+        assert set(result["verified_sections"]) == {"83", "84"}
+        assert result["critic_revision_discarded"] is False
+
+    print("  Test 8 passed: Critic revision with a genuinely re-verified citation is delivered as-is.")
+
+
 if __name__ == "__main__":
     print("\nRunning CaseSession Orchestrator Unit Tests:")
     test_unclear_domain_stops_immediately()
@@ -629,6 +812,8 @@ if __name__ == "__main__":
     test_final_check_gap_surfaced_once()
     test_debate_exception_does_not_crash_orchestrator()
     test_critic_exception_does_not_crash_orchestrator()
+    test_critic_revision_with_unverified_citation_is_discarded()
+    test_critic_revision_with_verified_citation_is_delivered()
     test_answer_question_without_start_raises()
     test_message_length_limit_enforced()
     print("\nAll CaseSession Orchestrator tests passed successfully!")
