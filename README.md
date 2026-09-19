@@ -24,8 +24,8 @@ The system is a pipeline of 10 specialized agents, each with a narrow job:
 
 | # | Agent | Status |
 |---|-------|--------|
-| 1 | Query Understanding Agent | ✅ Built — skeleton |
-| 2 | Intelligent Intake Agent | ✅ Built — skeleton |
+| 1 | Query Understanding Agent | ✅ Built — **validated** |
+| 2 | Intelligent Intake Agent | ✅ Built — **validated** |
 | 3 | Retrieval Agent (RAG) | ✅ Built — **validated** |
 | 4 | Landmark Case Learning Agent | ✅ Built — **validated** |
 | 5 | Citation Verification Agent | ✅ Built — **validated** |
@@ -123,7 +123,7 @@ API calls, real data — not code review alone:
    delivers the pre-critic verified answer instead, and flags
    `critic_revision_discarded=True` on `OrchestratorStageResult` for full
    transparency and auditing.
-      orchestrator fails safe: it automatically discards the Critic's revision,
+    orchestrator fails safe: it automatically discards the Critic's revision,
    delivers the pre-critic verified answer instead, and flags
    `critic_revision_discarded=True` on `OrchestratorStageResult` for full
    transparency and auditing.
@@ -138,6 +138,19 @@ API calls, real data — not code review alone:
    API call. Treat the fix as validated for the "clean revision" path and
    logic-tested (not yet live-validated) for the fail-safe path until a
    live run actually exercises it.
+7. **Query Understanding / Intake re-validated after the `specific_legal_question`
+   checklist field was added (closes the gap Section 4 of the original handoff
+   flagged).** Ran `scripts/validate_real_llm.py` (extended to compare retrieval
+   WITH vs WITHOUT the field on the same case) twice against the real API.
+   Both runs showed the same pattern: WITH the field, the QA Agent's retrieval
+   stayed tight on the one section that actually answers the citizen's specific
+   question (`['39(1)']` both runs); WITHOUT it, retrieval consistently pulled
+   in 3-4 topically-adjacent sections (defect definition, filing procedure,
+   sometimes product liability) instead. Confirms Known Issue #3's original
+   diagnosis and its fix are both correct. Query Understanding's extraction of
+   `specific_legal_question` from free text was also confirmed directly - it
+   correctly pulled the citizen's exact refund-vs-repair question out of a
+   natural-language message in both runs.
 
 Diagnostic logging (`qa_agent.py`'s built-query log,
 `orchestrator.py`'s retrieved-chunks log) is routed through
