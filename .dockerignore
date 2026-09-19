@@ -1,0 +1,43 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Version control & CI
+.git/
+.gitignore
+.github/
+
+# Tests and scripts
+tests/
+scripts/
+
+# Vector database and evaluation data
+data/chroma_db/
+data/eval/
+data/raw/case_law/.cache/
+
+# Documentation and markdown files
+*.md
+
+# Secrets and local environments
+.env
+.env.*
+!.env.example
+
+# Frontend (for future integration)
+node_modules/
+.next/
+dist/
+build/
