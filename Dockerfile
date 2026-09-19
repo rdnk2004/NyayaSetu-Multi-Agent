@@ -12,9 +12,12 @@ RUN useradd -m -u 1000 -s /bin/bash appuser
 
 WORKDIR /app
 
-# Install Python dependencies
+# Install CPU-only PyTorch first to prevent pulling multi-gigabyte CUDA runtime wheels
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining Python dependencies
 COPY requirements.txt requirements-api.txt ./
-RUN pip install --no-cache-dir --default-timeout=100 --retries 5 -r requirements-api.txt
+RUN pip install --no-cache-dir -r requirements-api.txt
 
 # Copy application source and data assets needed for embedding
 COPY --chown=appuser:appuser src/ ./src/
