@@ -123,6 +123,21 @@ API calls, real data — not code review alone:
    delivers the pre-critic verified answer instead, and flags
    `critic_revision_discarded=True` on `OrchestratorStageResult` for full
    transparency and auditing.
+      orchestrator fails safe: it automatically discards the Critic's revision,
+   delivers the pre-critic verified answer instead, and flags
+   `critic_revision_discarded=True` on `OrchestratorStageResult` for full
+   transparency and auditing.
+   **Post-fix real-API status:** confirmed via 3 live runs of
+   `validate_critic_real.py` that every section the Critic cites in the
+   delivered answer now appears in `verified_sections` — no repeat of the
+   original leak. In all 3 runs the Critic happened not to introduce an
+   unverified section, so `critic_revision_discarded` stayed `False` -
+   the *discard* branch itself is covered by a mocked orchestrator test
+   (`test_critic_revision_with_unverified_citation_is_discarded`) and is
+   green on CI, but has not yet been directly observed firing on a live
+   API call. Treat the fix as validated for the "clean revision" path and
+   logic-tested (not yet live-validated) for the fail-safe path until a
+   live run actually exercises it.
 
 Diagnostic logging (`qa_agent.py`'s built-query log,
 `orchestrator.py`'s retrieved-chunks log) is routed through

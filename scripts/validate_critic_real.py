@@ -99,7 +99,7 @@ def run_critic_validation():
             print(f"Verified against statutory chunks : {step_result.get('verified')}")
             print(f"Verified statutory sections       : {step_result.get('verified_sections')}")
             print(f"Rejected statutory sections       : {step_result.get('rejected_sections')}")
-
+            print(f"Critic revision discarded (fail-safe) : {step_result.get('critic_revision_discarded')}")
             # Debate output
             debate = step_result.get("debate")
             print("\n" + "-" * 80)
