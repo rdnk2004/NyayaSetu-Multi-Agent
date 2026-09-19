@@ -20,6 +20,12 @@ from unittest.mock import patch, MagicMock
 import uuid
 
 import pytest
+
+pytest.importorskip(
+    "fastapi",
+    reason="fastapi is not installed; install requirements-api.txt to run API tests",
+)
+
 from fastapi.testclient import TestClient
 
 # Ensure src and api are in sys.path
