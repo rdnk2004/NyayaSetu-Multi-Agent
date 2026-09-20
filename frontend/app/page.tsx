@@ -377,7 +377,7 @@ export default function HomePage() {
               rows={4}
               value={initialMessage}
               onChange={(e) => setInitialMessage(e.target.value)}
-              placeholder="Example: My landlord has refused to return my security deposit of ₹50,000 after I vacated the rental apartment in Bengaluru with 1 month notice. No damage was done to the property..."
+              placeholder="Example: I purchased a laptop for ₹45,000 from an e-commerce platform that arrived defective. The seller refused a replacement or refund within the 7-day return window..."
               disabled={isLoading}
               className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:opacity-70 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
@@ -431,34 +431,34 @@ export default function HomePage() {
                   type="button"
                   onClick={() =>
                     setInitialMessage(
-                      'My landlord in Mumbai is withholding my ₹60,000 security deposit without any repair invoice.'
+                      'I bought a smartphone for ₹25,000 from an online seller two months ago. The display malfunctioned and the authorized service center is refusing warranty repair.'
                     )
                   }
                   className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
                 >
-                  Tenancy: Security deposit deduction
+                  Defective Product: Warranty refusal
                 </button>
                 <button
                   type="button"
                   onClick={() =>
                     setInitialMessage(
-                      'I was fired from my IT job without any 30 days notice period or severance pay.'
+                      'An airline cancelled my flight booked for ₹18,000 three months ago and has refused to refund the ticket amount despite multiple written requests.'
                     )
                   }
                   className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
                 >
-                  Labor: Termination without notice
+                  Deficiency in Service: Cancelled flight refund
                 </button>
                 <button
                   type="button"
                   onClick={() =>
                     setInitialMessage(
-                      'The builder has delayed handing over possession of my flat by 18 months.'
+                      'The builder has delayed handing over possession of my flat by 18 months beyond the agreed date.'
                     )
                   }
                   className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
                 >
-                  Consumer / RERA: Flat possession delay
+                  Consumer / Real Estate: Delayed flat possession
                 </button>
               </div>
             </div>
