@@ -91,7 +91,7 @@ def _check_citation_overlap(actual_sections: list[str], expected_sections: list[
 
 
 def run_evaluation():
-    eval_file = PROJECT_ROOT / "data" / "eval" / "labeled_cases.json"
+    eval_file = PROJECT_ROOT / "data" / "eval" / "labeled_cases_v2_strict.json"
     if not eval_file.exists():
         print(f"Error: Dataset not found at {eval_file}")
         sys.exit(1)
