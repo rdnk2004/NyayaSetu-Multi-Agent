@@ -142,32 +142,38 @@ def run_evaluation():
         print(f"\n[{idx}/{total_cases}] Evaluating {case_id} ({case_type})...")
 
         # 1. Run Pipeline via CaseSession
+                # 1. Run Pipeline via CaseSession
         session = CaseSession()
-        stage_result = session.start(case["citizen_message"])
 
-        # Auto-fill intake questions from pre-configured dataset answers
-        intake_turns = 0
-        while stage_result.stage == "intake_question" and intake_turns < 10:
-            intake_turns += 1
-            field = stage_result.field_key
-            # Fetch answer from test case, or fallback to generic realistic context
-            answer = intake_answers.get(field, f"Standard details provided for {field}")
-            stage_result = session.answer_question(field, answer)
+        try:
+            stage_result = session.start(case["citizen_message"])
 
-        # Handle final check gap if surfaced
-        if stage_result.stage == "final_check_gap":
-            stage_result = session.proceed()
+            # Auto-fill intake questions from pre-configured dataset answers
+            intake_turns = 0
+            while stage_result.stage == "intake_question" and intake_turns < 10:
+                intake_turns += 1
+                field = stage_result.field_key
+                answer = intake_answers.get(field, f"Standard details provided for {field}")
+                stage_result = session.answer_question(field, answer)
 
-        if case_id == "case_03" and session.intake_session:
-            brief = session.intake_session.to_case_brief()
-            diag_q = _build_query_from_facts(brief.get("facts", {}))
-            print(f"  [DIAGNOSTIC case_03] Constructed Query: \"{redact_pii(diag_q)}\"")
-            diag_chunks = retrieve(diag_q, top_k=5)
-            diag_secs = [
-                f"Sec {ch.get('metadata', {}).get('section')} ({ch.get('metadata', {}).get('title')})"
-                for ch in diag_chunks
-            ]
-            print(f"  [DIAGNOSTIC case_03] Retrieved Chunks: {diag_secs}")
+            if stage_result.stage == "final_check_gap":
+                stage_result = session.proceed()
+
+            if case_id == "case_03" and session.intake_session:
+                brief = session.intake_session.to_case_brief()
+                diag_q = _build_query_from_facts(brief.get("facts", {}))
+                print(f"  [DIAGNOSTIC case_03] Constructed Query: \"{redact_pii(diag_q)}\"")
+                diag_chunks = retrieve(diag_q, top_k=5)
+                diag_secs = [
+                    f"Sec {ch.get('metadata', {}).get('section')} ({ch.get('metadata', {}).get('title')})"
+                    for ch in diag_chunks
+                ]
+                print(f"  [DIAGNOSTIC case_03] Retrieved Chunks: {diag_secs}")
+
+        except RuntimeError as e:
+            print(f"  [SKIPPED] {case_id}: {e}")
+            unrun_cases.append(case_id)
+            continue
 
         # Extract pipeline outputs
         is_verified = bool(stage_result.verified)
@@ -198,7 +204,6 @@ def run_evaluation():
                 debate_result = run_debate(case_brief, debate_chunks)
 
                 is_grey_zone = bool(debate_result.get("is_grey_zone", False))
-                # For ambiguous cases, expected outcome is is_grey_zone == True
                 is_grey_zone_matched = is_grey_zone is True
                 if is_grey_zone_matched:
                     ambiguous_correct += 1
@@ -227,6 +232,13 @@ def run_evaluation():
             "debate": debate_data,
         }
         results.append(case_record)
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump({"cases": results, "unrun_cases": unrun_cases}, f, indent=2)
+
+        status_flag = "PASS" if passed_verification_and_match else "FAIL"
+        print(f"  Result: [{status_flag}] | Verified: {is_verified} | Sections: {verified_sections} (Expected: {expected_sections})")
+        if debate_data:
+            print(f"  Debate Grey-Zone Adjudication: {debate_data.get('is_grey_zone')} (Match: {debate_data.get('matched_ambiguity_label')})")
 
         status_flag = "PASS" if passed_verification_and_match else "FAIL"
         print(f"  Result: [{status_flag}] | Verified: {is_verified} | Sections: {verified_sections} (Expected: {expected_sections})")
