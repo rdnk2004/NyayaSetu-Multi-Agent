@@ -105,6 +105,13 @@ def run_evaluation():
     print(f"Model: {config.GEMINI_MODEL} | Max Budget: {config.MAX_CALLS_PER_SESSION} calls")
     print("=" * 80)
 
+    # --- Output file set up BEFORE the loop, so incremental saves inside
+    # the loop and the final save at the end both write to the same file. ---
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_dir = PROJECT_ROOT / "data" / "eval"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"results_{timestamp}.json"
+
     results = []
     unrun_cases = []
     total_cases = len(cases)
@@ -142,7 +149,6 @@ def run_evaluation():
         print(f"\n[{idx}/{total_cases}] Evaluating {case_id} ({case_type})...")
 
         # 1. Run Pipeline via CaseSession
-                # 1. Run Pipeline via CaseSession
         session = CaseSession()
 
         try:
@@ -232,13 +238,11 @@ def run_evaluation():
             "debate": debate_data,
         }
         results.append(case_record)
+
+        # Incremental/partial save after every case, so a crash mid-run
+        # doesn't lose already-completed cases or API spend.
         with open(out_file, "w", encoding="utf-8") as f:
             json.dump({"cases": results, "unrun_cases": unrun_cases}, f, indent=2)
-
-        status_flag = "PASS" if passed_verification_and_match else "FAIL"
-        print(f"  Result: [{status_flag}] | Verified: {is_verified} | Sections: {verified_sections} (Expected: {expected_sections})")
-        if debate_data:
-            print(f"  Debate Grey-Zone Adjudication: {debate_data.get('is_grey_zone')} (Match: {debate_data.get('matched_ambiguity_label')})")
 
         status_flag = "PASS" if passed_verification_and_match else "FAIL"
         print(f"  Result: [{status_flag}] | Verified: {is_verified} | Sections: {verified_sections} (Expected: {expected_sections})")
@@ -265,12 +269,8 @@ def run_evaluation():
     print(f"Grey-Zone Detection Accuracy (Ambiguous):{grey_zone_accuracy:.1f}% ({ambiguous_correct}/{ambiguous_total})")
     print("=" * 80)
 
-    # 4. Save Detailed Results File
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_dir = PROJECT_ROOT / "data" / "eval"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_file = out_dir / f"results_{timestamp}.json"
-
+    # 4. Save Final Detailed Results File (overwrites the partial save above
+    # with the complete payload including metrics)
     payload = {
         "timestamp": timestamp,
         "model": config.GEMINI_MODEL,
