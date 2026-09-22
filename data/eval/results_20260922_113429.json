@@ -1,0 +1,474 @@
+{
+  "timestamp": "20260922_113429",
+  "model": "gemini-3.1-flash-lite",
+  "duration_seconds": 786.12,
+  "total_cases_evaluated": 20,
+  "total_cases_available": 20,
+  "api_calls_used": 186,
+  "metrics": {
+    "grounding_and_match_rate_pct": 50.0,
+    "citation_rejection_rate_pct": 14.8,
+    "grey_zone_detection_accuracy_pct": 83.3
+  },
+  "unrun_cases": [],
+  "cases": [
+    {
+      "id": "case_01",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 39"
+      ],
+      "verified_sections": [
+        "39(1)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_02",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(11)",
+        "Section 39",
+        "Section 2(6)",
+        "Section 38"
+      ],
+      "verified_sections": [
+        "2(11)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_03",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(28)",
+        "Section 21",
+        "Section 89",
+        "Section 2(43)",
+        "Section 2(6)",
+        "Section 39",
+        "Section 2(47)"
+      ],
+      "verified_sections": [
+        "21(3)"
+      ],
+      "rejected_sections": [
+        "21(1)"
+      ],
+      "citation_match": true,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_04",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(6)",
+        "Section 2(47)",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_05",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(47)"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_06",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 34",
+        "Section 83",
+        "Section 84",
+        "Section 82",
+        "Section 85",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_07",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 34",
+        "Section 35",
+        "Section 2(6)",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_08",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 82",
+        "Section 83",
+        "Section 84",
+        "Section 86",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "83",
+        "84",
+        "87"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_09",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 37",
+        "Section 74",
+        "Section 80",
+        "Section 38",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "74(1)",
+        "38(1)",
+        "81(3)",
+        "38(2)(c)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_10",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 71",
+        "Section 72",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "72(1)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_11",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(11)",
+        "Section 85"
+      ],
+      "verified_sections": [
+        "85",
+        "39(1)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_12",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(47)",
+        "Section 39",
+        "Section 2(6)",
+        "Section 38"
+      ],
+      "verified_sections": [
+        "39(1)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_13",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(11)",
+        "Section 39",
+        "Section 2(6)",
+        "Section 35"
+      ],
+      "verified_sections": [
+        "2(47)",
+        "39(1)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_14",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 41",
+        "Section 47"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_15",
+      "case_type": "ambiguous",
+      "verified": true,
+      "expected_sections": [
+        "Section 84",
+        "Section 87",
+        "Section 82",
+        "Section 83",
+        "Section 86",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "84(1)(a)",
+        "86(b)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute centers on the 'proximate cause' of the explosion, which creates a factual and legal grey zone under Chapter VI of the Act. The Plaintiff relies on Section 84(1)(a), asserting that the for...",
+        "plaintiff_cited_sections": [
+          "83",
+          "84(1)(a)",
+          "84(2)",
+          "87(3)",
+          "39(1)(e)"
+        ],
+        "defense_cited_sections": [
+          "84",
+          "86",
+          "87"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_16",
+      "case_type": "ambiguous",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(7)",
+        "Section 83",
+        "Section 84",
+        "Section 86"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute rests on two distinct legal issues that remain unsettled under the provided text. First, regarding the 'self-employment/livelihood' question raised by the citizen, the provided statutory c...",
+        "plaintiff_cited_sections": [
+          "82",
+          "83",
+          "87(1)",
+          "87(2)",
+          "38(2)"
+        ],
+        "defense_cited_sections": [
+          "87(1)",
+          "38(2)",
+          "82",
+          "83"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_17",
+      "case_type": "ambiguous",
+      "verified": false,
+      "expected_sections": [
+        "Section 84",
+        "Section 86",
+        "Section 82",
+        "Section 83",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "83"
+      ],
+      "rejected_sections": [
+        "86(d)"
+      ],
+      "citation_match": true,
+      "passed_full_verification": false,
+      "debate": {
+        "is_grey_zone": false,
+        "clearly_supported_side": "plaintiff",
+        "judge_summary": "The plaintiff's argument is clearly supported by the plain language of Section 86(d). While the defense argues they are a mere intermediary and have not exhausted all efforts, Section 86(d) explicitly...",
+        "plaintiff_cited_sections": [
+          "82",
+          "83",
+          "86(d)",
+          "2(34)"
+        ],
+        "defense_cited_sections": [
+          "86",
+          "87(3)"
+        ],
+        "matched_ambiguity_label": false
+      }
+    },
+    {
+      "id": "case_18",
+      "case_type": "ambiguous",
+      "verified": true,
+      "expected_sections": [
+        "Section 69",
+        "Section 2(11)",
+        "Section 38",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "69(1)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute centers on whether 'continuous repair' constitutes a 'continuing cause of action' under Section 69, which mandates a two-year limitation period. The provided text of Section 69(1) strictly...",
+        "plaintiff_cited_sections": [
+          "84(1)",
+          "69(1)",
+          "69(2)",
+          "39(1)"
+        ],
+        "defense_cited_sections": [
+          "69",
+          "38(2)",
+          "84",
+          "39(1)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_19",
+      "case_type": "ambiguous",
+      "verified": false,
+      "expected_sections": [
+        "Section 84",
+        "Section 87",
+        "Section 82",
+        "Section 83",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "87(3)"
+      ],
+      "rejected_sections": [
+        "84"
+      ],
+      "citation_match": true,
+      "passed_full_verification": false,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute hinges on the interpretation of Section 87(3), which exempts a manufacturer from liability if a danger is 'obvious or commonly known' or if the consumer 'ought to have known' it based on t...",
+        "plaintiff_cited_sections": [
+          "84(1)(e)",
+          "84(2)",
+          "87(3)"
+        ],
+        "defense_cited_sections": [
+          "87(3)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_20",
+      "case_type": "ambiguous",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(46)",
+        "Section 2(47)",
+        "Section 49"
+      ],
+      "verified_sections": [
+        "49",
+        "59"
+      ],
+      "rejected_sections": [
+        "2(46)"
+      ],
+      "citation_match": true,
+      "passed_full_verification": false,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute rests on whether the non-refundable clause constitutes an 'unfair contract' under Section 2(46). The Plaintiff argues that the clause imposes an 'unreasonable condition' under Section 2(46...",
+        "plaintiff_cited_sections": [
+          "2(46)",
+          "2(47)",
+          "49(2)",
+          "59(2)"
+        ],
+        "defense_cited_sections": [
+          "2(46)",
+          "2(47)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    }
+  ]
+}
