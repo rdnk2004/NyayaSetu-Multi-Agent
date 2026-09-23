@@ -17,7 +17,7 @@ from config import QA_RETRIEVAL_TOP_K
 from llm_client import call_llm_structured, safe_parse_llm_json
 from models import CaseBrief, QAResult
 from pii_redaction import redact_pii
-from retrieve import retrieve
+from retrieve import retrieve, stitch_sibling_chunks
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +163,7 @@ def answer_question(case_brief: CaseBrief | dict) -> QAResult:
         )
 
     chunks = retrieve(query, top_k=QA_RETRIEVAL_TOP_K)
+    chunks = stitch_sibling_chunks(chunks)
     if not chunks:
         logger.debug("No statutory chunks retrieved for query: %s", redact_pii(query))
         return QAResult(
@@ -200,20 +201,21 @@ def answer_question(case_brief: CaseBrief | dict) -> QAResult:
     answer = str(parsed.get("answer", "") or "").strip()
     raw_citations = parsed.get("cited_sections", [])
     if isinstance(raw_citations, list):
-        cited_sections = [str(s).strip() for s in raw_citations if str(s).strip()]
+        qa_raw_proposed_sections = [str(s).strip() for s in raw_citations if str(s).strip()]
     elif isinstance(raw_citations, str) and raw_citations.strip():
-        cited_sections = [raw_citations.strip()]
+        qa_raw_proposed_sections = [raw_citations.strip()]
     else:
-        cited_sections = []
-    
+        qa_raw_proposed_sections = []
+
     cited_sections = [
         s[8:].strip() if s.lower().startswith("section ") else s
-        for s in cited_sections
+        for s in qa_raw_proposed_sections
     ]
 
     return QAResult(
         answer=answer,
         cited_sections=cited_sections,
+        qa_raw_proposed_sections=qa_raw_proposed_sections,
         status=status,
         retrieved_chunks=chunks,
     )
