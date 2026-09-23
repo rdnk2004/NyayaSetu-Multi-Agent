@@ -10,6 +10,8 @@ Evaluates:
 
 Usage:
   python scripts/run_evaluation.py
+  python scripts/run_evaluation.py --resume     # skip cases already completed
+                                                  # in the most recent results file
 """
 
 import datetime
@@ -90,8 +92,62 @@ def _check_citation_overlap(actual_sections: list[str], expected_sections: list[
     return False
 
 
+def _find_latest_results_file(out_dir: Path) -> Path | None:
+    """Finds the most recent results_*.json file in out_dir, if any."""
+    candidates = sorted(out_dir.glob("results_*.json"))
+    return candidates[-1] if candidates else None
+
+
+def _recompute_totals_from_results(results: list[dict]) -> dict:
+    """
+    Recomputes all running counters from a list of already-completed case
+    records, so a --resume run has correct aggregate metrics without having
+    to separately persist/restore counter state.
+    """
+    total_citations_generated = 0
+    total_citations_rejected = 0
+    ambiguous_total = 0
+    ambiguous_correct = 0
+    verified_and_matched_count = 0
+
+    for rec in results:
+        verified_sections = rec.get("verified_sections", [])
+        rejected_sections = rec.get("rejected_sections", [])
+        total_citations_generated += len(verified_sections) + len(rejected_sections)
+        total_citations_rejected += len(rejected_sections)
+
+        if rec.get("passed_full_verification"):
+            verified_and_matched_count += 1
+
+        debate = rec.get("debate")
+        if rec.get("case_type") == "ambiguous":
+            ambiguous_total += 1
+            if debate and debate.get("matched_ambiguity_label"):
+                ambiguous_correct += 1
+
+    return {
+        "total_citations_generated": total_citations_generated,
+        "total_citations_rejected": total_citations_rejected,
+        "ambiguous_total": ambiguous_total,
+        "ambiguous_correct": ambiguous_correct,
+        "verified_and_matched_count": verified_and_matched_count,
+    }
+
+
 def run_evaluation():
     eval_file = PROJECT_ROOT / "data" / "eval" / "labeled_cases_v2_strict.json"
+    if "--file" in sys.argv:
+        f_idx = sys.argv.index("--file")
+        if f_idx + 1 < len(sys.argv):
+            eval_file = Path(sys.argv[f_idx + 1])
+    elif "-f" in sys.argv:
+        f_idx = sys.argv.index("-f")
+        if f_idx + 1 < len(sys.argv):
+            eval_file = Path(sys.argv[f_idx + 1])
+
+    if not eval_file.is_absolute():
+        eval_file = PROJECT_ROOT / eval_file
+
     if not eval_file.exists():
         print(f"Error: Dataset not found at {eval_file}")
         sys.exit(1)
@@ -114,16 +170,43 @@ def run_evaluation():
 
     results = []
     unrun_cases = []
-    total_cases = len(cases)
 
     total_citations_generated = 0
     total_citations_rejected = 0
-
     ambiguous_total = 0
     ambiguous_correct = 0
-
     verified_and_matched_count = 0
 
+    # --- Resume support: skip cases already completed in the most recent
+    # results file, and restore all running totals from those records. ---
+    if "--resume" in sys.argv:
+        prev_file = _find_latest_results_file(out_dir)
+        if prev_file is None:
+            print("[RESUME] No prior results_*.json file found — running full set.")
+        else:
+            with open(prev_file, "r", encoding="utf-8") as f:
+                prev_payload = json.load(f)
+
+            prev_results = prev_payload.get("cases", [])
+            prev_unrun_ids = set(prev_payload.get("unrun_cases", []))
+            done_ids = {c["id"] for c in prev_results}
+
+            # Only re-run cases that were previously unrun/failed; keep
+            # completed case records as-is.
+            cases = [c for c in cases if c.get("id") in prev_unrun_ids or c.get("id") not in done_ids]
+            results = list(prev_results)
+
+            totals = _recompute_totals_from_results(results)
+            total_citations_generated = totals["total_citations_generated"]
+            total_citations_rejected = totals["total_citations_rejected"]
+            ambiguous_total = totals["ambiguous_total"]
+            ambiguous_correct = totals["ambiguous_correct"]
+            verified_and_matched_count = totals["verified_and_matched_count"]
+
+            print(f"[RESUME] Loaded {prev_file.name}: {len(done_ids)} cases already completed.")
+            print(f"[RESUME] Re-running {len(cases)} remaining case(s): {[c['id'] for c in cases]}")
+
+    total_cases = len(results) + len(cases)
     start_time = time.time()
 
     for idx, case in enumerate(cases, 1):
@@ -141,12 +224,13 @@ def run_evaluation():
             print("\n" + "!" * 80)
             print(f"[BUDGET GUARD] Approaching MAX_CALLS_PER_SESSION ceiling: {current_calls}/{max_calls} calls.")
             print(f"Halting evaluation before executing {case_id} to ensure clean safety shutdown.")
-            unrun_cases = [c["id"] for c in cases[idx - 1 :]]
-            print(f"Cases NOT run in this batch ({len(unrun_cases)}): {unrun_cases}")
+            remaining = [c["id"] for c in cases[idx - 1 :]]
+            unrun_cases = list(unrun_cases) + remaining
+            print(f"Cases NOT run in this batch ({len(remaining)}): {remaining}")
             print("!" * 80)
             break
 
-        print(f"\n[{idx}/{total_cases}] Evaluating {case_id} ({case_type})...")
+        print(f"\n[{len(results) + idx}/{total_cases}] Evaluating {case_id} ({case_type})...")
 
         # 1. Run Pipeline via CaseSession
         session = CaseSession()
@@ -185,6 +269,11 @@ def run_evaluation():
         is_verified = bool(stage_result.verified)
         verified_sections = list(stage_result.verified_sections or [])
         rejected_sections = list(stage_result.rejected_sections or [])
+        qa_raw_proposed_sections = list(
+            getattr(stage_result, "qa_raw_proposed_sections", None)
+            or (session.qa_result.get("qa_raw_proposed_sections", []) if hasattr(session, "qa_result") and session.qa_result else [])
+            or []
+        )
         final_answer = str(stage_result.final_answer or "")
 
         all_citations = verified_sections + rejected_sections
@@ -226,15 +315,24 @@ def run_evaluation():
                 logger.error(f"Error executing debate for {case_id}: {e}")
                 debate_data = {"error": str(e), "matched_ambiguity_label": False}
 
+        qa_chunks = session.qa_result.get("retrieved_chunks", []) if hasattr(session, "qa_result") and session.qa_result else []
+        retrieved_chunk_sections = [
+            f"Section {c.get('metadata', {}).get('section', 'Unknown')} ({c.get('metadata', {}).get('title', 'No Title')})"
+            for c in qa_chunks
+        ]
+
         case_record = {
             "id": case_id,
             "case_type": case_type,
             "verified": is_verified,
             "expected_sections": expected_sections,
+            "retrieved_chunks": retrieved_chunk_sections,
+            "qa_raw_proposed_sections": qa_raw_proposed_sections,
             "verified_sections": verified_sections,
             "rejected_sections": rejected_sections,
             "citation_match": has_matched_citation,
             "passed_full_verification": passed_verification_and_match,
+            "final_answer": final_answer,
             "debate": debate_data,
         }
         results.append(case_record)
@@ -245,7 +343,8 @@ def run_evaluation():
             json.dump({"cases": results, "unrun_cases": unrun_cases}, f, indent=2)
 
         status_flag = "PASS" if passed_verification_and_match else "FAIL"
-        print(f"  Result: [{status_flag}] | Verified: {is_verified} | Sections: {verified_sections} (Expected: {expected_sections})")
+        print(f"  Result: [{status_flag}] | Verified: {is_verified} | QA Proposed: {qa_raw_proposed_sections} | Verified Secs: {verified_sections} (Expected: {expected_sections})")
+        print(f"  Retrieved Chunks (post-stitching): {retrieved_chunk_sections}")
         if debate_data:
             print(f"  Debate Grey-Zone Adjudication: {debate_data.get('is_grey_zone')} (Match: {debate_data.get('matched_ambiguity_label')})")
 
@@ -261,8 +360,8 @@ def run_evaluation():
     print("EVALUATION BENCHMARK METRICS SUMMARY")
     print("=" * 80)
     print(f"Total Cases Tested:                      {executed_count} / {total_cases}")
-    print(f"Total LLM API Calls Consumed:            {_DEFAULT_SESSION_GUARD.session_call_count}")
-    print(f"Execution Duration:                      {duration:.2f}s")
+    print(f"Total LLM API Calls Consumed (this run): {_DEFAULT_SESSION_GUARD.session_call_count}")
+    print(f"Execution Duration (this run):           {duration:.2f}s")
     print("-" * 80)
     print(f"Citation Grounding & Match Rate:         {grounding_accuracy:.1f}% ({verified_and_matched_count}/{executed_count})")
     print(f"Citation Rejection (Hallucination Proxy): {rejection_rate:.1f}% ({total_citations_rejected}/{total_citations_generated})")
