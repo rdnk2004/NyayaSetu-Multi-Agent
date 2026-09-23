@@ -6,6 +6,8 @@ from the vector store. This is the function every later agent
 (QA agent, Citation Verification agent, etc.) will call.
 """
 
+import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +18,8 @@ from config import (
     QA_RETRIEVAL_TOP_K,
 )
 from pii_redaction import redact_pii
+
+logger = logging.getLogger(__name__)
 
 # pyrefly: ignore [missing-import]
 import chromadb
@@ -80,6 +84,81 @@ def retrieve(
                 "distance": results["distances"][0][i],
             })
     return hits
+
+
+_CORPUS_CHUNKS_PATH = Path(__file__).resolve().parent.parent / "data" / "processed" / "chunks.json"
+_SIBLINGS_BY_SECTION: dict[str, list[dict]] | None = None
+
+
+def _load_sibling_map() -> dict[str, list[dict]]:
+    """Load corpus chunks indexed by section string for fast sibling lookup."""
+    global _SIBLINGS_BY_SECTION
+    if _SIBLINGS_BY_SECTION is not None:
+        return _SIBLINGS_BY_SECTION
+
+    sibling_map: dict[str, list[dict]] = {}
+    if _CORPUS_CHUNKS_PATH.exists():
+        try:
+            with open(_CORPUS_CHUNKS_PATH, "r", encoding="utf-8") as f:
+                raw_chunks = json.load(f)
+            for c in raw_chunks:
+                sec = str(c.get("section", "")).strip()
+                if not sec:
+                    continue
+                sibling_map.setdefault(sec, []).append(c)
+            # Sort each section's siblings by id/part to guarantee correct reading order
+            for sec, s_list in sibling_map.items():
+                s_list.sort(key=lambda x: str(x.get("id", "")))
+        except Exception as e:
+            logger.warning("Could not load chunks.json for sibling stitching: %s", e)
+
+    _SIBLINGS_BY_SECTION = sibling_map
+    return _SIBLINGS_BY_SECTION
+
+
+def stitch_sibling_chunks(chunks: list[dict]) -> list[dict]:
+    """
+    Given a list of retrieved chunks, if any chunk's statutory section is split into
+    multiple parts in the corpus (e.g. Section 2(47), 18, 38(2), 39(1), 101, 102),
+    stitch all sibling parts together into a unified chunk so sub-clauses are not missed.
+    Deduplicates sections so a stitched section appears once at its best retrieved rank.
+    """
+    if not chunks:
+        return []
+
+    sibling_map = _load_sibling_map()
+    if not sibling_map:
+        return chunks
+
+    stitched_results: list[dict] = []
+    seen_sections: set[str] = set()
+
+    for chunk in chunks:
+        meta = chunk.get("metadata") or {}
+        sec = str(meta.get("section", "")).strip()
+        if not sec:
+            stitched_results.append(chunk)
+            continue
+
+        if sec in seen_sections:
+            # Sibling already stitched and added at higher rank
+            continue
+
+        siblings = sibling_map.get(sec, [])
+        if len(siblings) > 1:
+            full_text = "\n\n".join(ch.get("text", "").strip() for ch in siblings if ch.get("text"))
+            stitched_chunk = dict(chunk)
+            stitched_chunk["text"] = full_text
+            stitched_meta = dict(meta)
+            stitched_meta["part"] = f"1/1 (stitched from {len(siblings)} parts)"
+            stitched_chunk["metadata"] = stitched_meta
+            stitched_results.append(stitched_chunk)
+            seen_sections.add(sec)
+        else:
+            stitched_results.append(chunk)
+            seen_sections.add(sec)
+
+    return stitched_results
 
 
 if __name__ == "__main__":

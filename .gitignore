@@ -60,3 +60,5 @@ eggs/
 .eggs/
 *.egg-info/
 *.egg
+data/eval/results_*.json
+data/eval/adv_05_single.json

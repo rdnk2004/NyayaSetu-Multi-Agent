@@ -1,0 +1,461 @@
+{
+  "timestamp": "20260922_115836",
+  "model": "gemini-3.1-flash-lite",
+  "duration_seconds": 897.92,
+  "total_cases_evaluated": 20,
+  "total_cases_available": 20,
+  "api_calls_used": 200,
+  "metrics": {
+    "grounding_and_match_rate_pct": 55.0,
+    "citation_rejection_rate_pct": 6.7,
+    "grey_zone_detection_accuracy_pct": 66.7
+  },
+  "unrun_cases": [],
+  "cases": [
+    {
+      "id": "case_01",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 39"
+      ],
+      "verified_sections": [
+        "84(1)(a)",
+        "39(1)",
+        "38(2)(c)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_02",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(11)",
+        "Section 39",
+        "Section 2(6)",
+        "Section 38"
+      ],
+      "verified_sections": [
+        "2(11)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_03",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(28)",
+        "Section 21",
+        "Section 89",
+        "Section 2(43)",
+        "Section 2(6)",
+        "Section 39",
+        "Section 2(47)"
+      ],
+      "verified_sections": [
+        "21(1)",
+        "21(3)",
+        "2(43)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_04",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(6)",
+        "Section 2(47)",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_05",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(47)"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_06",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 34",
+        "Section 83",
+        "Section 84",
+        "Section 82",
+        "Section 85",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_07",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 34",
+        "Section 35",
+        "Section 2(6)",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_08",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 82",
+        "Section 83",
+        "Section 84",
+        "Section 86",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "83",
+        "84(1)",
+        "84(2)",
+        "87"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_09",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 37",
+        "Section 74",
+        "Section 80",
+        "Section 38",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "38(1)",
+        "74(1)",
+        "81(3)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_10",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 71",
+        "Section 72",
+        "Section 39"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_11",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(11)",
+        "Section 85"
+      ],
+      "verified_sections": [
+        "85"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_12",
+      "case_type": "clear_cut",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(47)",
+        "Section 39",
+        "Section 2(6)",
+        "Section 38"
+      ],
+      "verified_sections": [
+        "39(1)",
+        "81(3)",
+        "82"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": null
+    },
+    {
+      "id": "case_13",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(11)",
+        "Section 39",
+        "Section 2(6)",
+        "Section 35"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_14",
+      "case_type": "clear_cut",
+      "verified": false,
+      "expected_sections": [
+        "Section 41",
+        "Section 47"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": null
+    },
+    {
+      "id": "case_15",
+      "case_type": "ambiguous",
+      "verified": true,
+      "expected_sections": [
+        "Section 84",
+        "Section 87",
+        "Section 82",
+        "Section 83",
+        "Section 86",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "83",
+        "84",
+        "87(2)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute centers on the legal impact of a routine filter change on manufacturer liability. Under Section 84(1), the manufacturer is strictly liable for manufacturing defects (such as a faulty therm...",
+        "plaintiff_cited_sections": [
+          "84(1)",
+          "84(2)",
+          "87(2)",
+          "87(3)",
+          "39(1)"
+        ],
+        "defense_cited_sections": [
+          "86",
+          "84",
+          "87(3)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_16",
+      "case_type": "ambiguous",
+      "verified": false,
+      "expected_sections": [
+        "Section 2(7)",
+        "Section 83",
+        "Section 84",
+        "Section 86"
+      ],
+      "verified_sections": [],
+      "rejected_sections": [],
+      "citation_match": false,
+      "passed_full_verification": false,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute contains a genuine grey zone regarding the burden of proof and procedural requirements. While Section 84(1)(a) and (d) provide the Plaintiff a basis to claim liability for a manufacturing ...",
+        "plaintiff_cited_sections": [
+          "82",
+          "83",
+          "84(1)",
+          "87(1)",
+          "38(2)"
+        ],
+        "defense_cited_sections": [
+          "87(1)",
+          "83",
+          "84",
+          "85",
+          "38(2)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_17",
+      "case_type": "ambiguous",
+      "verified": true,
+      "expected_sections": [
+        "Section 84",
+        "Section 86",
+        "Section 82",
+        "Section 83",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "86(d)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": {
+        "is_grey_zone": false,
+        "clearly_supported_side": "plaintiff",
+        "judge_summary": "The law provides a clear pathway for the consumer to hold the seller liable under these specific circumstances. While the defense argues that they did not exercise control over the design or manufactu...",
+        "plaintiff_cited_sections": [
+          "83",
+          "86(d)",
+          "2(34)"
+        ],
+        "defense_cited_sections": [
+          "86",
+          "87(3)"
+        ],
+        "matched_ambiguity_label": false
+      }
+    },
+    {
+      "id": "case_18",
+      "case_type": "ambiguous",
+      "verified": true,
+      "expected_sections": [
+        "Section 69",
+        "Section 2(11)",
+        "Section 38",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "69(1)",
+        "69(2)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute centers on whether repeated, failed repair attempts extend the 'cause of action' under Section 69(1) or constitute a 'sufficient cause' for delay under Section 69(2). While Section 69(1) s...",
+        "plaintiff_cited_sections": [
+          "39(1)(a)",
+          "39(1)(f)",
+          "69(1)",
+          "69(2)",
+          "84(1)(d)"
+        ],
+        "defense_cited_sections": [
+          "69",
+          "38(2)",
+          "39(1)",
+          "84(1)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_19",
+      "case_type": "ambiguous",
+      "verified": false,
+      "expected_sections": [
+        "Section 84",
+        "Section 87",
+        "Section 82",
+        "Section 83",
+        "Section 39"
+      ],
+      "verified_sections": [
+        "87(2)"
+      ],
+      "rejected_sections": [
+        "84(1)(e)",
+        "87(3)"
+      ],
+      "citation_match": true,
+      "passed_full_verification": false,
+      "debate": {
+        "is_grey_zone": true,
+        "clearly_supported_side": null,
+        "judge_summary": "The dispute centers on the interpretation of Section 87(3) versus Section 84(1)(e). Section 84(1)(e) explicitly makes a manufacturer liable for failing to provide adequate warnings regarding improper ...",
+        "plaintiff_cited_sections": [
+          "84(1)(e)",
+          "87(2)",
+          "87(3)"
+        ],
+        "defense_cited_sections": [
+          "87(3)"
+        ],
+        "matched_ambiguity_label": true
+      }
+    },
+    {
+      "id": "case_20",
+      "case_type": "ambiguous",
+      "verified": true,
+      "expected_sections": [
+        "Section 2(46)",
+        "Section 2(47)",
+        "Section 49"
+      ],
+      "verified_sections": [
+        "2(46)",
+        "49(2)",
+        "59(2)"
+      ],
+      "rejected_sections": [],
+      "citation_match": true,
+      "passed_full_verification": true,
+      "debate": {
+        "error": "Budget Protection Triggered: this session has already made 200 calls, hitting MAX_CALLS_PER_SESSION=200. Raise the limit in .env if this is intentional.",
+        "matched_ambiguity_label": false
+      }
+    }
+  ]
+}

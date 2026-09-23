@@ -46,6 +46,7 @@ class CaseSession:
         self.state: str = "intake"
         self.domain: str | None = None
         self.intake_session: IntakeSession | None = None
+        self.qa_result: Any = None
         self.final_result: dict[str, Any] | None = None
         self._final_check_surfaced: bool = False
 
@@ -154,6 +155,7 @@ class CaseSession:
 
         case_brief = self.intake_session.to_case_brief()
         qa_result = answer_question(case_brief)
+        self.qa_result = qa_result
 
         retrieved_chunks = qa_result.get("retrieved_chunks", [])
         if logger.isEnabledFor(logging.DEBUG):
@@ -261,6 +263,7 @@ class CaseSession:
             final_answer=final_answer,
             verified_sections=final_verified_sections,
             rejected_sections=final_rejected_sections,
+            qa_raw_proposed_sections=list(qa_result.get("qa_raw_proposed_sections", [])),
             debate=debate_result,
             critic=critic_result,
             critic_revision_discarded=critic_revision_discarded,

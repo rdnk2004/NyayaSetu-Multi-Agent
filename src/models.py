@@ -82,6 +82,7 @@ class QAResult(NyayaSetuModel):
     """
     answer: str = ""
     cited_sections: list[str] = Field(default_factory=list)
+    qa_raw_proposed_sections: list[str] = Field(default_factory=list)
     status: str = "unclear"  # "answered" | "unclear"
     retrieved_chunks: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -162,6 +163,7 @@ class OrchestratorStageResult(NyayaSetuModel):
     final_answer: str | None = None
     verified_sections: list[str] = Field(default_factory=list)
     rejected_sections: list[str] = Field(default_factory=list)
+    qa_raw_proposed_sections: list[str] = Field(default_factory=list)
     debate: DebateResult | None = None
     critic: CriticResult | None = None
     critic_revision_discarded: bool = False

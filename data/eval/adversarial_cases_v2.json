@@ -1,0 +1,116 @@
+[
+  {
+    "id": "adv_v2_01",
+    "citizen_message": "I purchased a luxury residential villa from a prominent builder for an exact total consideration of Rs 1,00,00,000 (Rupees One Crore paid in full). The builder has delayed handover by 18 months without explanation. I want to approach the State Consumer Commission directly in my state capital under Section 47 to seek immediate refund and interest, on the grounds that a Rs 1 Crore transaction meets the State Commission threshold. Does the State Commission have original jurisdiction under Section 47 for a complaint where consideration is exactly Rs 1 Crore?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 34(1)",
+      "Section 47(1)"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Residential luxury villa for total consideration of exactly Rs 1,00,00,000",
+      "what_went_wrong": "Builder delayed handover by 18 months; complainant seeks to file original complaint directly before State Commission under Section 47 claiming consideration of Rs 1 Crore qualifies",
+      "when_it_happened": "Handover due 18 months ago",
+      "amount_paid": "Rs 1,00,00,000",
+      "seller_or_provider": "Prestige Horizon Estates Ltd",
+      "resolution_attempted": "Approaching State Commission directly to file consumer complaint under Section 47",
+      "specific_legal_question": "Does original jurisdiction lie with the State Commission under Section 47 or with the District Commission under Section 34(1) when the consideration is exactly Rs 1 Crore?"
+    },
+    "label_source": "condition_b_adversarial",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Numeric boundary misreading. Section 34(1) gives District Commission jurisdiction where consideration 'does not exceed one crore rupees' (<= 1 Cr). Section 47(1)(a)(i) gives State Commission jurisdiction only where consideration 'exceeds rupees one crore' (> 1 Cr). The citizen's consideration is exactly Rs 1,00,00,000. Shallow skimming of 'one crore' tempts the model to affirm State Commission jurisdiction under Section 47(1), misreading 'exceeds' as 'up to and including'."
+  },
+  {
+    "id": "adv_v2_02",
+    "citizen_message": "The District Consumer Commission ordered my trading firm to pay Rs 8,00,000 to an aggrieved customer. I am aggrieved by this order on points of law and want to file an appeal before the State Commission. I am filing on the 35th day (well within the 45-day limitation period). However, I do not have funds right now to deposit 50% of the awarded amount. Can the State Commission entertain my appeal under Section 41 without the 50% pre-deposit, provided I file within the 45-day statutory window?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 41"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "District Commission compensation order directing payment of Rs 8,00,000",
+      "what_went_wrong": "Appellant filing appeal before State Commission on day 35 under Section 41 but cannot deposit the mandatory 50% sum",
+      "when_it_happened": "Order passed 35 days ago",
+      "amount_paid": "Rs 8,00,000 ordered to be paid",
+      "seller_or_provider": "District Consumer Disputes Redressal Commission",
+      "resolution_attempted": "Submitted memorandum of appeal without 50% statutory deposit under Section 41",
+      "specific_legal_question": "Can the State Commission entertain an appeal under Section 41 filed within 45 days if the appellant fails to deposit fifty percent of the ordered amount?"
+    },
+    "label_source": "condition_b_adversarial",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Sub-part condition precedent misreading. Section 41 grants a general 45-day right of appeal to the State Commission, but the second proviso contains an express mandatory condition precedent: 'no appeal by a person, who is required to pay any amount... shall be entertained by the State Commission unless the appellant has deposited fifty per cent. of that amount'. Shallow reading tempts the model to cite Section 41 to affirm the appeal is valid simply because it is within 45 days, ignoring the mandatory bar to entertainment without 50% deposit."
+  },
+  {
+    "id": "adv_v2_03",
+    "citizen_message": "I work as an assembly line technician in an automobile battery manufacturing plant. While handling an industrial acid degreaser solution, the liquid splashed and caused chemical burns to my arms. The specific bottle handed to me on the shop floor had no warning label attached to it. However, the chemical manufacturer had supplied detailed chemical safety data sheets and warning manuals to my corporate employer when delivering the bulk drums to the factory. Can I hold the chemical manufacturer liable under Section 84 for failure to provide adequate warnings to me as the worker?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 84",
+      "Section 87(2)"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Industrial chemical degreaser solution for factory workplace",
+      "what_went_wrong": "Worker suffered acid burn from unlabelled shop floor bottle; manufacturer provided comprehensive safety warnings and instructions to corporate employer at delivery under Section 87(2)",
+      "when_it_happened": "3 weeks ago",
+      "amount_paid": "Procured by employer",
+      "seller_or_provider": "ChemTech Industrial Solvents Ltd",
+      "resolution_attempted": "Filed product liability action under Section 84 against manufacturer for failure to provide warning on bottle",
+      "specific_legal_question": "Is the product manufacturer liable under Section 84 for failure to warn the individual employee when warnings were provided to the workplace employer under Section 87(2)(a)?"
+    },
+    "label_source": "condition_b_adversarial",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Sub-part exception clause misreading. Section 84 establishes general manufacturer liability for failure to provide adequate warnings or instructions. However, Section 87(2)(a) creates an explicit statutory exception: 'the product manufacturer shall not be liable, if the product was purchased by an employer for use at the workplace and the product manufacturer had provided warnings or instructions to such employer'. A shallow read focuses on Section 84 and the worker's burn, inducing the model to affirm liability under Section 84 while overlooking the employer-workplace defense in Section 87(2)(a)."
+  },
+  {
+    "id": "adv_v2_04",
+    "citizen_message": "I bought a standard heavy-duty steel camping hatchet axe from a sporting goods retailer to chop firewood on a trek. While holding a piece of firewood with my left hand, the hatchet slipped and severely cut my thumb. There was no sticker on the hatchet handle warning users that an axe blade is sharp and can cut fingers if hands are placed nearby. Can I hold the hatchet manufacturer legally liable under Section 84 for product liability due to failure to warn of this cutting danger?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 84",
+      "Section 87(3)"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Heavy-duty steel camping hatchet axe",
+      "what_went_wrong": "Consumer cut thumb while chopping wood; sues manufacturer under Section 84 for failure to place warning label on handle stating blade is sharp",
+      "when_it_happened": "2 weeks ago",
+      "amount_paid": "Rs 1,450",
+      "seller_or_provider": "Summit Outdoors Gear",
+      "resolution_attempted": "Sent legal notice alleging product liability under Section 84 for failure to instruct or warn",
+      "specific_legal_question": "Is the manufacturer liable under Section 84 for failure to warn about an obvious or commonly known cutting danger under Section 87(3)?"
+    },
+    "label_source": "condition_b_adversarial",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Sub-part exception clause misreading. Section 84(1) imposes product liability for failure to provide adequate warning or instruction. However, Section 87(3) carves out an absolute statutory defense: 'A product manufacturer shall not be liable for failure to instruct or warn about a danger which is obvious or commonly known to the user or consumer of such product'. A naive read tempts the model to cite Section 84 affirming liability for lack of warning, missing the obvious-danger exception in Section 87(3)."
+  },
+  {
+    "id": "adv_v2_05",
+    "citizen_message": "I purchased an imported camera drone from a specialized electronics hobby retailer. The foreign manufacturer provides no warranty in India. However, the retail shop owner personally signed an independent written express warranty on their shop letterhead guaranteeing that 'the drone battery is guaranteed not to overheat or ignite for 12 months, or the store will pay full replacement and property damages'. In month 4, the battery caught fire during charging and burned my desk. Can I hold the retail seller liable under product liability under Section 86 based on this independent express warranty?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 86",
+      "Section 84"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Imported camera drone from retail hobby store",
+      "what_went_wrong": "Battery caught fire damaging desk; retail store had given an independent written express warranty guaranteeing battery against fire for 12 months",
+      "when_it_happened": "4 months after purchase",
+      "amount_paid": "Rs 45,000",
+      "seller_or_provider": "SkyHigh Drone Hub (Retail Seller)",
+      "resolution_attempted": "Filed product liability claim against retail seller under Section 86",
+      "specific_legal_question": "Can a product seller who is not a manufacturer be held liable in a product liability action under Section 86 for breach of an independent express warranty that caused harm?"
+    },
+    "label_source": "condition_b_adversarial",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Sub-part exception clause misreading in the opposite direction. General product liability rule is that only manufacturers are liable for defects (Section 84), and sellers are generally exempt. However, Section 86(c) explicitly provides that a seller IS liable if 'he has made an express warranty of a product independent of any warranty made by a manufacturer and such product failed to conform to the express warranty... which caused the harm'. A model that relies on the broad heuristic 'sellers are not liable under product liability' will erroneously deny liability under Section 86, misreading the specific sub-part exception."
+  }
+]
