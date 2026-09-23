@@ -83,8 +83,75 @@ def _matches_section(actual: str, expected: str) -> bool:
     return False
 
 
+def compute_citation_metrics(
+    verified_sections: list[str],
+    expected_sections: list[str],
+    recall_threshold: float = 0.5,
+    precision_threshold: float = 0.5,
+    shape_aware_small_set_threshold: float = 0.6,
+) -> dict:
+    """
+    Computes citation precision, recall, and F1 against the full expected_sections set.
+    - Matched expected: expected sections that have at least one matching verified section.
+    - Matched verified: verified sections that match at least one expected section.
+    - Recall: len(matched_expected) / len(expected_sections)
+    - Precision: len(matched_verified) / len(verified_sections)
+    - Fixed match: (recall >= recall_threshold) and (precision >= precision_threshold)
+    - Shape-aware match:
+        If len(expected_sections) <= 2, requires recall >= shape_aware_small_set_threshold (0.6, requiring 2/2 or 1/1)
+        If len(expected_sections) > 2, requires recall >= recall_threshold (0.5)
+        and precision >= precision_threshold
+    """
+    if not expected_sections:
+        rec = 1.0 if not verified_sections else 0.0
+        prec = 1.0 if not verified_sections else 0.0
+        f1 = 1.0 if not verified_sections else 0.0
+        return {
+            "recall": rec,
+            "precision": prec,
+            "f1": f1,
+            "matched_expected": [],
+            "matched_verified": [],
+            "citation_match": rec >= recall_threshold,
+            "citation_match_fixed": rec >= recall_threshold,
+            "citation_match_shape_aware": rec >= recall_threshold,
+            "shape_aware_recall_threshold": recall_threshold,
+        }
+
+    matched_expected = [
+        exp for exp in expected_sections
+        if any(_matches_section(act, exp) for act in verified_sections)
+    ]
+    matched_verified = [
+        act for act in verified_sections
+        if any(_matches_section(act, exp) for exp in expected_sections)
+    ]
+
+    recall = round(len(matched_expected) / len(expected_sections), 3)
+    precision = round(len(matched_verified) / len(verified_sections), 3) if verified_sections else 0.0
+    f1 = round((2 * precision * recall) / (precision + recall), 3) if (precision + recall) > 0 else 0.0
+
+    citation_match_fixed = bool(recall >= recall_threshold and precision >= precision_threshold)
+
+    # Shape-aware threshold: prevents 1-of-2 substitutions on small sets while allowing top-k retrieval flexibility on large sets
+    shape_aware_recall_thresh = shape_aware_small_set_threshold if len(expected_sections) <= 2 else recall_threshold
+    citation_match_shape_aware = bool(recall >= shape_aware_recall_thresh and precision >= precision_threshold)
+
+    return {
+        "recall": recall,
+        "precision": precision,
+        "f1": f1,
+        "matched_expected": matched_expected,
+        "matched_verified": matched_verified,
+        "citation_match": citation_match_fixed,  # primary backward compatible flag
+        "citation_match_fixed": citation_match_fixed,
+        "citation_match_shape_aware": citation_match_shape_aware,
+        "shape_aware_recall_threshold": shape_aware_recall_thresh,
+    }
+
+
 def _check_citation_overlap(actual_sections: list[str], expected_sections: list[str]) -> bool:
-    """Returns True if at least one actual section matches any expected section."""
+    """Legacy helper: Returns True if at least one actual section matches any expected section."""
     for act in actual_sections:
         for exp in expected_sections:
             if _matches_section(act, exp):
@@ -109,6 +176,7 @@ def _recompute_totals_from_results(results: list[dict]) -> dict:
     ambiguous_total = 0
     ambiguous_correct = 0
     verified_and_matched_count = 0
+    shape_aware_matched_count = 0
 
     for rec in results:
         verified_sections = rec.get("verified_sections", [])
@@ -118,6 +186,8 @@ def _recompute_totals_from_results(results: list[dict]) -> dict:
 
         if rec.get("passed_full_verification"):
             verified_and_matched_count += 1
+        if rec.get("passed_shape_aware_verification"):
+            shape_aware_matched_count += 1
 
         debate = rec.get("debate")
         if rec.get("case_type") == "ambiguous":
@@ -131,6 +201,7 @@ def _recompute_totals_from_results(results: list[dict]) -> dict:
         "ambiguous_total": ambiguous_total,
         "ambiguous_correct": ambiguous_correct,
         "verified_and_matched_count": verified_and_matched_count,
+        "shape_aware_matched_count": shape_aware_matched_count,
     }
 
 
@@ -155,10 +226,28 @@ def run_evaluation():
     with open(eval_file, "r", encoding="utf-8") as f:
         cases = json.load(f)
 
+    recall_threshold = 0.5
+    precision_threshold = 0.5
+    if "--recall-threshold" in sys.argv:
+        r_idx = sys.argv.index("--recall-threshold")
+        if r_idx + 1 < len(sys.argv):
+            recall_threshold = float(sys.argv[r_idx + 1])
+    elif any(a.startswith("--recall-threshold=") for a in sys.argv):
+        recall_threshold = float([a for a in sys.argv if a.startswith("--recall-threshold=")][0].split("=")[1])
+
+    if "--precision-threshold" in sys.argv:
+        p_idx = sys.argv.index("--precision-threshold")
+        if p_idx + 1 < len(sys.argv):
+            precision_threshold = float(sys.argv[p_idx + 1])
+    elif any(a.startswith("--precision-threshold=") for a in sys.argv):
+        precision_threshold = float([a for a in sys.argv if a.startswith("--precision-threshold=")][0].split("=")[1])
+
     print("=" * 80)
     print(f"NyayaSetu Benchmark Evaluation Runner ({len(cases)} Cases)")
     print(f"Target Domain: Consumer Protection Act, 2019")
     print(f"Model: {config.GEMINI_MODEL} | Max Budget: {config.MAX_CALLS_PER_SESSION} calls")
+    print(f"Citation Pass Rule (Fixed):       Recall >= {recall_threshold} & Precision >= {precision_threshold}")
+    print(f"Citation Pass Rule (Shape-Aware): <=2 sections: Recall >= 0.6 | >2 sections: Recall >= 0.5")
     print("=" * 80)
 
     # --- Output file set up BEFORE the loop, so incremental saves inside
@@ -176,6 +265,7 @@ def run_evaluation():
     ambiguous_total = 0
     ambiguous_correct = 0
     verified_and_matched_count = 0
+    shape_aware_matched_count = 0
 
     # --- Resume support: skip cases already completed in the most recent
     # results file, and restore all running totals from those records. ---
@@ -202,6 +292,7 @@ def run_evaluation():
             ambiguous_total = totals["ambiguous_total"]
             ambiguous_correct = totals["ambiguous_correct"]
             verified_and_matched_count = totals["verified_and_matched_count"]
+            shape_aware_matched_count = totals.get("shape_aware_matched_count", 0)
 
             print(f"[RESUME] Loaded {prev_file.name}: {len(done_ids)} cases already completed.")
             print(f"[RESUME] Re-running {len(cases)} remaining case(s): {[c['id'] for c in cases]}")
@@ -280,11 +371,21 @@ def run_evaluation():
         total_citations_generated += len(all_citations)
         total_citations_rejected += len(rejected_sections)
 
-        # Evaluate citation match
-        has_matched_citation = _check_citation_overlap(verified_sections, expected_sections)
+        # Evaluate citation match via full expected-set precision / recall
+        citation_metrics = compute_citation_metrics(
+            verified_sections=verified_sections,
+            expected_sections=expected_sections,
+            recall_threshold=recall_threshold,
+            precision_threshold=precision_threshold,
+        )
+        has_matched_citation = citation_metrics["citation_match_fixed"]
         passed_verification_and_match = is_verified and has_matched_citation
         if passed_verification_and_match:
             verified_and_matched_count += 1
+
+        passed_shape_aware = is_verified and citation_metrics["citation_match_shape_aware"]
+        if passed_shape_aware:
+            shape_aware_matched_count += 1
 
         # 2. Debate Mechanism Adjudication for Ambiguous Cases
         debate_data = None
@@ -330,8 +431,15 @@ def run_evaluation():
             "qa_raw_proposed_sections": qa_raw_proposed_sections,
             "verified_sections": verified_sections,
             "rejected_sections": rejected_sections,
+            "matched_expected_sections": citation_metrics["matched_expected"],
+            "matched_verified_sections": citation_metrics["matched_verified"],
+            "citation_precision": citation_metrics["precision"],
+            "citation_recall": citation_metrics["recall"],
+            "citation_f1": citation_metrics["f1"],
             "citation_match": has_matched_citation,
             "passed_full_verification": passed_verification_and_match,
+            "citation_match_shape_aware": citation_metrics["citation_match_shape_aware"],
+            "passed_shape_aware_verification": passed_shape_aware,
             "final_answer": final_answer,
             "debate": debate_data,
         }
@@ -342,8 +450,11 @@ def run_evaluation():
         with open(out_file, "w", encoding="utf-8") as f:
             json.dump({"cases": results, "unrun_cases": unrun_cases}, f, indent=2)
 
-        status_flag = "PASS" if passed_verification_and_match else "FAIL"
-        print(f"  Result: [{status_flag}] | Verified: {is_verified} | QA Proposed: {qa_raw_proposed_sections} | Verified Secs: {verified_sections} (Expected: {expected_sections})")
+        status_fixed = "PASS" if passed_verification_and_match else "FAIL"
+        status_shape = "PASS" if passed_shape_aware else "FAIL"
+        print(f"  Result: [Fixed: {status_fixed} | ShapeAware: {status_shape}] | Verified: {is_verified} | Precision: {citation_metrics['precision']:.2f} | Recall: {citation_metrics['recall']:.2f} | F1: {citation_metrics['f1']:.2f}")
+        print(f"  QA Proposed: {qa_raw_proposed_sections} | Verified Secs: {verified_sections} (Expected: {expected_sections})")
+        print(f"  Matched Expected: {citation_metrics['matched_expected']} | Matched Verified: {citation_metrics['matched_verified']}")
         print(f"  Retrieved Chunks (post-stitching): {retrieved_chunk_sections}")
         if debate_data:
             print(f"  Debate Grey-Zone Adjudication: {debate_data.get('is_grey_zone')} (Match: {debate_data.get('matched_ambiguity_label')})")
@@ -353,6 +464,10 @@ def run_evaluation():
 
     # 3. Compute Metrics
     grounding_accuracy = (verified_and_matched_count / executed_count * 100) if executed_count else 0.0
+    shape_aware_accuracy = (shape_aware_matched_count / executed_count * 100) if executed_count else 0.0
+    mean_precision = (sum(r.get("citation_precision", 0.0) for r in results) / executed_count * 100) if executed_count else 0.0
+    mean_recall = (sum(r.get("citation_recall", 0.0) for r in results) / executed_count * 100) if executed_count else 0.0
+    mean_f1 = (sum(r.get("citation_f1", 0.0) for r in results) / executed_count) if executed_count else 0.0
     rejection_rate = (total_citations_rejected / total_citations_generated * 100) if total_citations_generated else 0.0
     grey_zone_accuracy = (ambiguous_correct / ambiguous_total * 100) if ambiguous_total else 0.0
 
@@ -363,9 +478,18 @@ def run_evaluation():
     print(f"Total LLM API Calls Consumed (this run): {_DEFAULT_SESSION_GUARD.session_call_count}")
     print(f"Execution Duration (this run):           {duration:.2f}s")
     print("-" * 80)
-    print(f"Citation Grounding & Match Rate:         {grounding_accuracy:.1f}% ({verified_and_matched_count}/{executed_count})")
-    print(f"Citation Rejection (Hallucination Proxy): {rejection_rate:.1f}% ({total_citations_rejected}/{total_citations_generated})")
-    print(f"Grey-Zone Detection Accuracy (Ambiguous):{grey_zone_accuracy:.1f}% ({ambiguous_correct}/{ambiguous_total})")
+    print("PRIMARY GROUNDING METRICS (Continuous Distributions):")
+    print(f"  Mean Citation Precision:               {mean_precision:.1f}%")
+    print(f"  Mean Citation Recall:                  {mean_recall:.1f}%")
+    print(f"  Mean Citation F1:                      {mean_f1:.3f}")
+    print("-" * 80)
+    print("SECONDARY PASS RATES (Threshold Sensitivity Analysis):")
+    print(f"  Fixed Pass Rate (Rec >= {recall_threshold}, Prec >= {precision_threshold}):         {grounding_accuracy:.1f}% ({verified_and_matched_count}/{executed_count})")
+    print(f"  Shape-Aware Pass Rate (<=2: Rec>=0.6, >2: Rec>=0.5): {shape_aware_accuracy:.1f}% ({shape_aware_matched_count}/{executed_count})")
+    print("-" * 80)
+    print("SUBSYSTEM VERIFICATION DIAGNOSTICS:")
+    print(f"  Citation Rejection (Hallucination Proxy): {rejection_rate:.1f}% ({total_citations_rejected}/{total_citations_generated})")
+    print(f"  Grey-Zone Detection Accuracy (Ambiguous):{grey_zone_accuracy:.1f}% ({ambiguous_correct}/{ambiguous_total})")
     print("=" * 80)
 
     # 4. Save Final Detailed Results File (overwrites the partial save above
@@ -378,7 +502,14 @@ def run_evaluation():
         "total_cases_available": total_cases,
         "api_calls_used": _DEFAULT_SESSION_GUARD.session_call_count,
         "metrics": {
+            "mean_citation_precision_pct": round(mean_precision, 1),
+            "mean_citation_recall_pct": round(mean_recall, 1),
+            "mean_citation_f1": round(mean_f1, 3),
+            "grounding_pass_rate_fixed_pct": round(grounding_accuracy, 1),
+            "grounding_pass_rate_shape_aware_pct": round(shape_aware_accuracy, 1),
             "grounding_and_match_rate_pct": round(grounding_accuracy, 1),
+            "recall_threshold_fixed": recall_threshold,
+            "precision_threshold_fixed": precision_threshold,
             "citation_rejection_rate_pct": round(rejection_rate, 1),
             "grey_zone_detection_accuracy_pct": round(grey_zone_accuracy, 1),
         },
