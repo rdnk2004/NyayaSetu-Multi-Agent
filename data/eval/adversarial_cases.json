@@ -1,0 +1,140 @@
+[
+  {
+    "id": "adv_01",
+    "citizen_message": "I bought a kitchen blender from a neighborhood retail provisions shop called 'Sharma Grocery Store'. During ordinary usage, the blade broke because of a defective internal design and deeply lacerated my wrist. The retail shopkeeper Sharma never manufactured or altered the blender in any way. Can I hold this retail shopkeeper legally liable for product liability design defect under Section 84?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 86",
+      "Section 87(1)"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Kitchen food blender from neighborhood retail shop Sharma Grocery Store",
+      "what_went_wrong": "Blade detached due to internal design defect causing wrist laceration; retail shopkeeper did not manufacture or alter the product",
+      "when_it_happened": "Last month",
+      "amount_paid": "Rs 3,200",
+      "seller_or_provider": "Sharma Grocery Store (Retail Seller)",
+      "resolution_attempted": "Demanded product liability compensation directly from the retail shopkeeper under Section 84",
+      "specific_legal_question": "Can I hold the retail shopkeeper liable for product liability design defect under Section 84?"
+    },
+    "label_source": "adversarial-design",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Citizen asserts product liability for a manufacturing design defect directly against a retail shopkeeper under Section 84. Section 84 explicitly applies only to product manufacturers, whereas Section 86 governs product sellers and Section 87(1) exempts sellers where the product was not altered. The query tempts QA to retrieve and cite Section 84 to establish product liability against the seller; if QA cites Section 84 to answer whether the seller is liable, Citation Verification must reject it because Section 84 text affords no cause of action against non-manufacturing sellers."
+  },
+  {
+    "id": "adv_02",
+    "citizen_message": "A competitive exam coaching institute published front-page newspaper ads promising 'Guaranteed Top 50 Rank in UPSC or 100% money refund'. I enrolled my daughter and paid Rs 1,40,000, but discovered the entire claim was fraudulent. Can I file a complaint before the District Consumer Commission requesting the Commission to sentence the coaching director to two years of criminal imprisonment under Section 89?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 39",
+      "Section 89"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "UPSC competitive examination coaching program",
+      "what_went_wrong": "Misleading advertisement guaranteeing Top 50 rank or refund, which proved completely fraudulent; complainant wants District Commission to order 2 years imprisonment under Section 89",
+      "when_it_happened": "3 months ago",
+      "amount_paid": "Rs 1,40,000",
+      "seller_or_provider": "Apex IAS Academy",
+      "resolution_attempted": "Filed complaint seeking fee refund and criminal imprisonment under Section 89 from District Commission",
+      "specific_legal_question": "Can the District Consumer Commission sentence the coaching director to two years imprisonment under Section 89?"
+    },
+    "label_source": "adversarial-design",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Citizen demands that the District Consumer Commission impose a 2-year criminal imprisonment sentence under Section 89 for false advertisements. In reality, Section 89 is a penal offence prosecuted under Chapter VII before a Judicial Magistrate upon complaint by CCPA, whereas District Commission powers under Section 39 are civil (compensation, corrective advertising, refund). This tempts QA to cite Section 89 as a remedy obtainable from the District Commission; Citation Verification must evaluate whether Section 89 text supports the District Commission ordering imprisonment."
+  },
+  {
+    "id": "adv_03",
+    "citizen_message": "I had a consumer dispute with my car dealership regarding defective clutch repair. We mutually opted for mediation under Section 80, reached an amicable settlement, and the District Commission formally recorded the settlement order under Section 81. Three weeks later, I realized my repair costs exceed the settlement. Can I appeal this order before the State Consumer Commission under Section 41?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 41",
+      "Section 81"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Automobile clutch repair and mediated dispute settlement",
+      "what_went_wrong": "Signed mediation settlement agreement under Section 80 recorded by District Commission under Section 81; complainant now regrets settlement and wants to appeal to State Commission under Section 41",
+      "when_it_happened": "21 days ago",
+      "amount_paid": "Rs 85,000",
+      "seller_or_provider": "Metro Motors Dealership",
+      "resolution_attempted": "Approached State Commission to file appeal against mediated order under Section 41",
+      "specific_legal_question": "Can an appeal be filed before the State Commission under Section 41 against a District Commission order passed pursuant to a mediation settlement under Section 80?"
+    },
+    "label_source": "adversarial-design",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Citizen asks if an appeal can be filed before the State Commission under Section 41 against an order passed pursuant to a mediation settlement. The 3rd proviso to Section 41 explicitly mandates that 'no appeal shall lie from any order passed under sub-section (1) of section 81 by the District Commission pursuant to a settlement by mediation under section 80'. The mention of 'order of District Commission' and 'appeal under Section 41' tempts QA to retrieve Section 41 and cite the general 45-day right of appeal while overlooking the statutory bar in the third proviso. If QA cites Section 41 asserting an appeal is maintainable, Citation Verification rejects it."
+  },
+  {
+    "id": "adv_04",
+    "citizen_message": "Our private limited wholesale trading company, 'Veloce Logistics Pvt Ltd', bought a consignment of 40 commercial transport cargo trucks for Rs 4.5 Crores for our commercial freight shipping business. 6 of the trucks suffered cracked engine blocks. Can our company file a consumer complaint against the manufacturer under Section 35 as a consumer under Section 2(7)?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 2(7)",
+      "Section 35"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Fleet of 40 commercial cargo transport trucks for commercial logistics enterprise",
+      "what_went_wrong": "6 trucks developed cracked engine blocks; manufacturer refuses replacement; private limited transport firm seeking consumer remedy under Section 35 and Section 2(7)",
+      "when_it_happened": "Last month",
+      "amount_paid": "Rs 4.5 Crores",
+      "seller_or_provider": "National Heavy Vehicles Ltd",
+      "resolution_attempted": "Issued legal notice demanding consumer dispute resolution under Consumer Protection Act",
+      "specific_legal_question": "Can a corporate commercial freight transport company purchasing trucks for commercial operations file a complaint as a consumer under Section 2(7)?"
+    },
+    "label_source": "adversarial-design",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "A commercial freight logistics enterprise purchasing a fleet of trucks for commercial haulage seeks relief as a consumer. Under Section 2(7), 'consumer' explicitly excludes any person who buys goods or avails services 'for resale or for any commercial purpose' (excluding self-employment). The facts strongly match consumer definitions and Section 35 complaint filing, tempting QA to cite Section 2(7) or Section 35 to affirm consumer standing. If QA claims the enterprise is a consumer under Section 2(7), Citation Verification must reject the citation as contradicted by the exclusion text."
+  },
+  {
+    "id": "adv_05",
+    "citizen_message": "The District Consumer Commission dismissed my flat possession grievance against a real estate developer three months ago after full trial, concluding that the builder was not deficient. I believe the Commission committed gross errors of law in interpreting the contract. Can I file a review petition under Section 40 before the same District Commission after 90 days asking them to re-hear the entire case on its legal merits?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 40",
+      "Section 41"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Residential apartment flat delivery dispute",
+      "what_went_wrong": "District Commission dismissed complaint on merits 90 days ago; complainant seeks re-hearing of legal merits before the same District Commission under Section 40 review",
+      "when_it_happened": "90 days ago",
+      "amount_paid": "Rs 45 Lakhs",
+      "seller_or_provider": "Horizon Developers Ltd",
+      "resolution_attempted": "Drafted review petition under Section 40 seeking reconsideration on merits",
+      "specific_legal_question": "Can a complainant file for review under Section 40 before the District Commission after 90 days to re-hear substantive legal merits?"
+    },
+    "label_source": "adversarial-design",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "Citizen asks to file a review before the District Commission under Section 40 after 90 days on substantive legal merits. Section 40 strictly limits review to 'an error apparent on the face of the record' and must be filed 'within thirty days'. A substantive re-hearing on legal merits lies only by way of an appeal to the State Commission under Section 41 within 45 days. The prompt tempts QA to cite Section 40 as a valid remedy for rehearing or to endorse a review after 90 days, which Citation Verification will reject."
+  },
+  {
+    "id": "adv_06",
+    "citizen_message": "I purchased an industrial bench circular saw. To cut oversized timber beams, I removed the safety shield mechanism, modified the motor wiring to double the RPM, and fitted a non-compatible custom steel blade. During operation, the custom blade shattered, destroying my equipment. Can I sue the seller under product liability claiming defect under Section 84?",
+    "expected_domain": "Consumer Protection",
+    "expected_cited_sections": [
+      "Section 87(1)",
+      "Section 86"
+    ],
+    "case_type": "clear_cut",
+    "intake_answers": {
+      "what_was_bought_or_hired": "Industrial bench circular saw",
+      "what_went_wrong": "User deliberately removed safety shield, modified motor wiring, and fitted non-compatible blade; blade shattered during excessive RPM; user sues seller under Section 84 product liability",
+      "when_it_happened": "2 weeks ago",
+      "amount_paid": "Rs 18,500",
+      "seller_or_provider": "Apex Tools & Hardware (Seller)",
+      "resolution_attempted": "Demanded damages under product liability from seller",
+      "specific_legal_question": "Can a consumer sue a seller under Section 84 product liability when the user altered, modified, and removed safety guards?"
+    },
+    "label_source": "adversarial-design",
+    "question_rewritten": true,
+    "message_names_expected_section": false,
+    "design_rationale": "The user extensively modified the product, removed safety guards, and altered wiring before suffering harm. Section 87(1) creates an express statutory bar: 'A product liability action cannot be brought against the product seller if, at the time of harm, the product was misused, altered, or modified.' The user explicitly invokes Section 84 product liability. This tempts QA to cite Section 84 or assert product liability against the seller, which contradicts Section 87(1) and Section 86."
+  }
+]
