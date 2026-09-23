@@ -22,6 +22,10 @@ their situation in plain language. Your job has two parts:
 1. Decide which ONE of these legal domains it best fits: {domain_list}
    If it doesn't clearly fit any of them, set domain to "unclear".
 
+Domain Scope Guidance:
+- "Consumer Protection" includes: consumer transactions, deficiency in service, unfair or deceptive trade practices, false advertising, AND statutory Product Liability claims under Chapter VI of the Consumer Protection Act, 2019 (claims against a product manufacturer, seller, or service provider for harm, personal injury, property damage, manufacturing or design defect, or failure to provide adequate warnings or instructions).
+- Explicit workplace product liability scope under Section 87(2): The Act specifically governs product liability actions where "the product was purchased by an employer for use at the workplace and the product manufacturer had provided warnings or instructions to such employer". Therefore, claims arising from harm or injuries caused by defective products or inadequate warnings fall under "Consumer Protection" even if the incident occurred in a workplace, factory, industrial, or employment setting.
+
 2. Extract ONLY facts the citizen actually stated. For the domain's \
 checklist fields below, fill in a value ONLY if it was explicitly \
 mentioned. Leave a field as null if it wasn't mentioned - do NOT guess \
